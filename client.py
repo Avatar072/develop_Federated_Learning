@@ -44,10 +44,12 @@ selected_dataset = args.dataset
 if selected_dataset == 'x_train_half1':
     x_train = np.load(filepath + "x_train_half1.npy", allow_pickle=True)
     y_train = np.load(filepath + "y_train_half1.npy", allow_pickle=True)
+    client_str = "client1"
     print("Training with x_train_half1")
 elif selected_dataset == 'x_train_half2':
     x_train = np.load(filepath + "x_train_half2.npy", allow_pickle=True)
     y_train = np.load(filepath + "y_train_half2.npy", allow_pickle=True)
+    client_str = "client2"
     print("Training with x_train_half2")
 
 x_test = np.load(filepath + "x_test.npy", allow_pickle=True)
@@ -62,13 +64,13 @@ y_test = torch.from_numpy(y_test).type(torch.LongTensor)
 print("Minimum label value:", min(y_train))
 print("Maximum label value:", max(y_train))
 print(np.unique(y_train))
-# 定义神经网络模型
+# def model using nn model ，和神經元使用512
 class Net(nn.Module):
     def __init__(self) -> None:
         super(Net, self).__init__()
-        self.fc1 = nn.Linear(x_train.shape[1], 500)
-        self.fc2 = nn.Linear(500, 500)
-        self.fc3 = nn.Linear(500, 15)
+        self.fc1 = nn.Linear(x_train.shape[1], 512)
+        self.fc2 = nn.Linear(512, 512)
+        self.fc3 = nn.Linear(512, 15)
         #self.fc3 = nn.Linear(64, len(np.unique(y_train)))
 
     def forward(self, x: torch.FloatTensor) -> torch.FloatTensor:
@@ -161,16 +163,16 @@ def test(net, testloader):
                 # file.write(str(RecordRecall))
                 # file.writelines("\n")
                 # 添加标题行
-                file.write("Label," + ",".join([str(i) for i in range(labelCount)]) + "\n")
+                #file.write("Label," + ",".join([str(i) for i in range(labelCount)]) + "\n")
                 # 写入Recall数据
-                file.write("Recall," + RecordRecall + "\n")
+                file.write(f"{client_str}_Recall," + RecordRecall + "\n")
         
             # 将总体准确率和其他信息写入 "accuracy-baseline.csv" 文件
             with open("./my_AnalyseReportfolder/accuracy-baseline.csv", "a+") as file:
                 # file.write(str(RecordAccuracy))
                 # file.writelines("\n")
                 # 添加标题行
-                file.write("Accuracy,Time\n")
+                file.write(f"{client_str}_Accuracy,Time\n")
                 # 写入Accuracy数据
                 file.write(str(RecordAccuracy) + "\n")
 
@@ -207,7 +209,7 @@ class FlowerClient(fl.client.NumPyClient):
 
     def fit(self, parameters, config):
         self.set_parameters(parameters)
-        train(net, trainloader, epochs=1)
+        train(net, trainloader, epochs=300)
         return self.get_parameters(config={}), len(trainloader.dataset), {}
 
     def evaluate(self, parameters, config):
