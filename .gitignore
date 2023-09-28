@@ -1,0 +1,4 @@
+# 忽略所有 .csv 文件
+*.csv
+# 忽略"data" 資料夾下所有csv文件
+/data/*.csv
