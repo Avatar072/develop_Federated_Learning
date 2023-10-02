@@ -24,6 +24,9 @@ from sklearn.datasets import make_classification
 from collections import Counter
 from functools import reduce
 from sklearn.metrics.pairwise import cosine_similarity
+#############################################################################  variable  ###################
+filepath = "D:\\Labtest20230911\\"
+#############################################################################  variable  ###################
 global Round
 Round = 0
 global count
@@ -35,6 +38,7 @@ class_names =  ['FORCE_ERROR','MITM_UNALTERED','NORMAL','READ','RECOGNITION','RE
 # #############################################################################
 # 1. Regular PyTorch pipeline: nn.Module, train, test, and DataLoader
 # #############################################################################
+DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 if torch.cuda.is_available():
     print("use GPU")
     print(torch.cuda.is_available())
@@ -70,12 +74,12 @@ class DNN(nn.Module):
 
         super(DNN,self).__init__()
         
-        nodes_layer_0 = 10
-        nodes_layer_1 = 500
-        nodes_layer_2 = 500
-        nodes_layer_3 = 500
-        nodes_layer_4 = 500
-        nodes_layer_7 = 8
+        nodes_layer_0 = 78 #78個feature
+        nodes_layer_1 = 512
+        nodes_layer_2 = 512
+        nodes_layer_3 = 512
+        nodes_layer_4 = 512
+        nodes_layer_7 = 15 #15個label
        
         # input has two features and
         self.layer1 = nn.Linear(nodes_layer_0,nodes_layer_1)
@@ -170,7 +174,8 @@ def test(net, testloader, device: torch.device,flag):
     y = ()
     x = ()
 
-    for i in range(len(class_names)):
+    # for i in range(len(class_names)):
+    for i in range(15):
         a = a + (acc[str(i)]['precision'],)
         try:
             z = z + (acc[str(i)]['recall'],)
@@ -190,16 +195,16 @@ def test(net, testloader, device: torch.device,flag):
     y = str(y)[1:-1]
     x = str(x)[1:-1]
     if not flag == "none":
-        with open("./TXT/recall_C{0}_{1}.csv".format(client,flag), "a+") as file:
+        with open("./other_AnalyseReportFolder/recall_C{0}_{1}.csv".format(client,flag), "a+") as file:
             file.write(str(z))
             file.writelines("\n")
-        with open("./TXT/accuracy_C{0}_{1}.csv".format(client,flag), "a+") as file:
+        with open("./other_AnalyseReportFolder/accuracy_C{0}_{1}.csv".format(client,flag), "a+") as file:
             file.write(str(x))
             file.writelines("\n")
-        with open("./TXT/loss_C{0}_{1}.csv".format(client,flag), "a+") as file:
+        with open("./other_AnalyseReportFolder/loss_C{0}_{1}.csv".format(client,flag), "a+") as file:
             file.write(str(y))
             file.writelines("\n")
-        with open("./TXT/precision_C{0}_{1}.csv".format(client,flag), "a+") as file:
+        with open("./other_AnalyseReportFolder/precision_C{0}_{1}.csv".format(client,flag), "a+") as file:
             file.write(str(a))
             file.writelines("\n")
         """
@@ -306,6 +311,7 @@ maxEpochforIDS=100
 try:
     maxEpochforIDS=sys.argv[1]
     maxEpochforIDS = int(maxEpochforIDS)
+    print(sys.argv[1])
 except:
     maxEpochforIDS
     
@@ -321,7 +327,7 @@ optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, net.parameters())
 strategy = []
 try:
     strategy_num = sys.argv[2]
-    
+    print(sys.argv[2])
     strategy_num = int(strategy_num)
     if strategy_num > 0:
         #strategy.append("7")
@@ -360,14 +366,14 @@ for param_tensor in net.state_dict():
         save_state.update({param_tensor:net.state_dict()[param_tensor]})
         #print(param_tensor, "\t", net.state_dict()[param_tensor].size())
 
-from imblearn.over_sampling import SMOTE
-def smote_train_data(x_train,y_train,label):
-    #smo = SMOTE( sampling_strategy ={label: generate_num },random_state=42)
-    smo = SMOTE( sampling_strategy ='auto',random_state=42)
-    #print(Counter(y_train))
-    X_smo, y_smo = smo.fit_resample(x_train, y_train)
-    #print(Counter(y_smo))
-    return X_smo, y_smo
+# from imblearn.over_sampling import SMOTE
+# def smote_train_data(x_train,y_train,label):
+#     #smo = SMOTE( sampling_strategy ={label: generate_num },random_state=42)
+#     smo = SMOTE( sampling_strategy ='auto',random_state=42)
+#     #print(Counter(y_train))
+#     X_smo, y_smo = smo.fit_resample(x_train, y_train)
+#     #print(Counter(y_smo))
+#     return X_smo, y_smo
 
 #for name, para in net.named_parameters():
 #   print('{}: {}'.format(name, para.shape))
@@ -376,14 +382,32 @@ start = time.time()
 client = 1
 try:
     client=sys.argv[3]
+    print(sys.argv[3])
     client = int(client)
 except:
     client
 
-x_train = np.loadtxt('./electra_modbus/xtrain{0}t.txt'.format(client))
-x_test = np.loadtxt('./electra_modbus/xtest{0}t.txt'.format(client))
-y_train = np.loadtxt('./electra_modbus/ytrain{0}t.txt'.format(client))
-y_test = np.loadtxt('./electra_modbus/ytest{0}t.txt'.format(client))
+# python client.py 10 0 1
+# 10 是epsoch
+# 0 starey
+# 1 client
+# x_train = np.loadtxt('./electra_modbus/xtrain{0}t.txt'.format(client))
+# x_test = np.loadtxt('./electra_modbus/xtest{0}t.txt'.format(client))
+# y_train = np.loadtxt('./electra_modbus/ytrain{0}t.txt'.format(client))
+# y_test = np.loadtxt('./electra_modbus/ytest{0}t.txt'.format(client))
+
+# 加载选择的数据集
+if client == 1:
+    x_train = np.load(filepath + "x_train_half1.npy", allow_pickle=True)
+    y_train = np.load(filepath + "y_train_half1.npy", allow_pickle=True)
+    print("Training with x_train_half1")
+elif client == 2:
+    x_train = np.load(filepath + "x_train_half2.npy", allow_pickle=True)
+    y_train = np.load(filepath + "y_train_half2.npy", allow_pickle=True)
+    print("Training with x_train_half2")
+
+x_test = np.load(filepath + "x_test.npy", allow_pickle=True)
+y_test = np.load(filepath + "y_test.npy", allow_pickle=True)  # Fixed variable name
 
 #x_smo,y_smo = smote_train_data(x_train,y_train,5)
 #trainloader = load_data(x_smo,y_smo,512)
@@ -435,7 +459,7 @@ class FlowerClient(fl.client.NumPyClient):
 
 # Start Flower client
 fl.client.start_numpy_client(
-    server_address="192.168.1.132:53388",
+    server_address="192.168.1.119:54000",
     client=FlowerClient(),
 )
 end = time.time()
