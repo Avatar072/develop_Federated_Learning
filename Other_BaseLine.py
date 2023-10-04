@@ -341,4 +341,10 @@ for epoch in range(maxEpochforIDS):
                 file.write(str(b))
                 file.writelines("\n")
 
+            GenrateReport = classification_report(y_true, y_pred, digits=4, output_dict=True)
+            # 将字典转换为 DataFrame 并转置
+            report_df = pd.DataFrame(GenrateReport).transpose()
+            # 保存为 baseline_report 文件 "這邊會存最後一次的資料"
+            report_df.to_csv("./other_AnalyseReportFolder/baseline_report_C{0}.csv".format(client),header=True)
+
     print(torch.__version__)

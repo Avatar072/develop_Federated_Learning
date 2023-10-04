@@ -4,6 +4,7 @@ import time
 import argparse
 import numpy as np
 import pandas as pd
+import sys
 from collections import OrderedDict
 from sklearn import preprocessing 
 from sklearn.model_selection import train_test_split
@@ -32,25 +33,37 @@ DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 parser = argparse.ArgumentParser(description='Federated Learning Client')
 
 # 添加一个参数来选择数据集
-parser.add_argument('--dataset', type=str, choices=['x_train_half1', 'x_train_half2'], default='x_train_half1',
-                    help='Choose the dataset for training (x_train_half1 or x_train_half2)')
+parser.add_argument('--dataset', type=str, choices=['train_half1', 'train_half2'], default='train_half1',
+                    help='Choose the dataset for training (train_half1 or train_half2)')
+
+parser.add_argument('maxEpochforIDS', type=int, help='Maximum number of epochs for IDS')
 
 args = parser.parse_args()
 
 # 根据命令行参数选择数据集
-selected_dataset = args.dataset
+my_command = args.dataset
+maxEpochforIDS = args.maxEpochforIDS
+try:
+    maxEpochforIDS = int(maxEpochforIDS)
+    print("maxEpochforIDS:", maxEpochforIDS)
+except:
+    maxEpochforIDS
+# python client.py --dataset train_half1
+# python client.py --dataset train_half2
 
 # 加载选择的数据集
-if selected_dataset == 'x_train_half1':
+if my_command == 'train_half1':
     x_train = np.load(filepath + "x_train_half1.npy", allow_pickle=True)
     y_train = np.load(filepath + "y_train_half1.npy", allow_pickle=True)
     client_str = "client1"
-    print("Training with x_train_half1")
-elif selected_dataset == 'x_train_half2':
+    print("Training with train_half1")
+elif my_command == 'train_half2':
     x_train = np.load(filepath + "x_train_half2.npy", allow_pickle=True)
     y_train = np.load(filepath + "y_train_half2.npy", allow_pickle=True)
     client_str = "client2"
-    print("Training with x_train_half2")
+    print("Training with train_half2")
+
+
 
 x_test = np.load(filepath + "x_test.npy", allow_pickle=True)
 y_test = np.load(filepath + "y_test.npy", allow_pickle=True)  # Fixed variable name
@@ -61,9 +74,18 @@ y_train = torch.from_numpy(y_train).type(torch.LongTensor)
 x_test = torch.from_numpy(x_test).type(torch.FloatTensor)
 y_test = torch.from_numpy(y_test).type(torch.LongTensor)
 
+# 将测试数据移动到GPU上
+x_train = x_train.to(DEVICE)
+y_train = y_train.to(DEVICE)
+x_test = x_test.to(DEVICE)
+y_test = y_test.to(DEVICE)
+
 print("Minimum label value:", min(y_train))
 print("Maximum label value:", max(y_train))
-print(np.unique(y_train))
+
+
+
+
 # def model using nn model ，和神經元使用512
 class Net(nn.Module):
     def __init__(self) -> None:
@@ -87,7 +109,8 @@ class Net(nn.Module):
 def train(net, trainloader, epochs):
     print("train")
     criterion = nn.CrossEntropyLoss()
-    optimizer = torch.optim.SGD(net.parameters(), lr=0.01)
+    # optimizer = torch.optim.SGD(net.parameters(), lr=0.01)
+    optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, net.parameters()), lr=0.01)
 
     for _ in range(epochs):
         for images, labels in tqdm(trainloader):
@@ -141,7 +164,7 @@ def test(net, testloader):
             # print("correct:\n",correct)
             # print("total:\n",total)
             accuracy = correct / total
-            print("acc:\n",acc)
+            #print("acc:\n",acc)
             # 将每个类别的召回率写入 "recall-baseline.csv" 文件
             # RecordRecall是用来存储每个类别的召回率（recall）值的元组
             # RecordAccuracy是用来存储其他一些数据的元组，包括整体的准确率（accuracy）
@@ -149,9 +172,13 @@ def test(net, testloader):
             RecordRecall = ()
             RecordAccuracy = ()
             
-            labelCount = len(np.unique(y_train))# label數量
-            print("labelCount:\n",labelCount)
-           
+            # labelCount = len(np.unique(y_train))# label數量
+            # print("labelCount:\n",labelCount)
+            y_train_cpu = y_train.cpu()
+
+            # 计算唯一值的数量
+            labelCount = len(np.unique(y_train_cpu))
+
             for i in range(labelCount):
                 RecordRecall = RecordRecall + (acc[str(i)]['recall'],)
                 #RecordRecall.append(acc[str(i)]['recall'])    
@@ -162,16 +189,17 @@ def test(net, testloader):
 
             # 标志来跟踪是否已经添加了标题行
             header_written = False
-            with open("./my_AnalyseReportfolder/recall-baseline.csv", "a+") as file:
+            with open(f"./my_AnalyseReportfolder/recall-baseline_{client_str}.csv", "a+") as file:
                 # file.write(str(RecordRecall))
                 # file.writelines("\n")
                 # 添加标题行
                 #file.write("Label," + ",".join([str(i) for i in range(labelCount)]) + "\n")
                 # 写入Recall数据
-                file.write(f"{client_str}_Recall," + RecordRecall + "\n")
+                # file.write(f"{client_str}_Recall," + str(RecordRecall) + "\n")
+                file.write(str(RecordRecall) + "\n")
         
             # 将总体准确率和其他信息写入 "accuracy-baseline.csv" 文件
-            with open("./my_AnalyseReportfolder/accuracy-baseline.csv", "a+") as file:
+            with open(f"./my_AnalyseReportfolder/accuracy-baseline_{client_str}.csv", "a+") as file:
                 # file.write(str(RecordAccuracy))
                 # file.writelines("\n")
                 # 添加标题行
@@ -184,7 +212,7 @@ def test(net, testloader):
             # 将字典转换为 DataFrame 并转置
             report_df = pd.DataFrame(GenrateReport).transpose()
             # 保存为 baseline_report 文件
-            report_df.to_csv("./my_AnalyseReportfolder/baseline_report.csv",header=True)
+            report_df.to_csv(f"./my_AnalyseReportfolder/baseline_report_{client_str}.csv",header=True)
     accuracy = correct / total
     print("test_data:\n",len(test_data))
     print("train_data:\n",len(train_data))
@@ -193,7 +221,7 @@ def test(net, testloader):
 # 创建用于训练和测试的 DataLoader
 train_data = TensorDataset(x_train, y_train)
 test_data = TensorDataset(x_test, y_test)
-trainloader = DataLoader(train_data, batch_size=20000, shuffle=True)  # 设置 shuffle 为 True
+trainloader = DataLoader(train_data, batch_size=500, shuffle=True)  # 设置 shuffle 为 True
 # test_data 的batch_size要設跟test_data(y_test)的筆數一樣 重要!!!
 testloader = DataLoader(test_data, batch_size=len(test_data), shuffle=False)
 # #############################################################################
@@ -212,11 +240,11 @@ class FlowerClient(fl.client.NumPyClient):
 
     def fit(self, parameters, config):
         self.set_parameters(parameters)
-        train(net, trainloader, epochs=300)
-        return self.get_parameters(config={}), len(trainloader.dataset), {}#step1，#step2和Step3是在server做
+        train(net, trainloader, epochs=maxEpochforIDS)
+        return self.get_parameters(config={}), len(trainloader.dataset), {}#step1上傳給權重，#step2在server做聚合，step3往下傳給server
 
     def evaluate(self, parameters, config):
-        self.set_parameters(parameters)#更新現有的知識#step4
+        self.set_parameters(parameters)#更新現有的知識#step4 更新model
         accuracy = test(net, testloader)
         return accuracy, len(testloader.dataset), {"accuracy": accuracy}
 

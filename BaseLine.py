@@ -14,7 +14,8 @@ from tqdm import tqdm
 filepath = "D:\\Labtest20230911\\"
 start_IDS = time.time()
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
+print(torch.cuda.is_available())
+print(torch.__version__)
 
 # 命令行参数解析器
 parser = argparse.ArgumentParser(description='Federated Learning Client')
@@ -50,6 +51,14 @@ y_train = torch.from_numpy(y_train).type(torch.LongTensor)
 
 x_test = torch.from_numpy(x_test).type(torch.FloatTensor)
 y_test = torch.from_numpy(y_test).type(torch.LongTensor)
+
+
+# 将测试数据移动到GPU上
+x_train = x_train.to(DEVICE)
+y_train = y_train.to(DEVICE)
+x_test = x_test.to(DEVICE)
+y_test = y_test.to(DEVICE)
+
 
 # Define your neural network model
 class Net(nn.Module):
@@ -88,12 +97,109 @@ def train(net, trainloader, epochs):
             loss.backward()#類似覆盤回推結果會甚麼會差，
             optimizer.step()#使用優化器優化
 
-def test(net, testloader):
-    print("test")
-    correct = 0
-    total = 0
-    loss = 0  # 初始化损失值为0
-    ave_loss = 0
+
+        #oringal test    
+       # correct = 0
+       # total = 0
+       # loss = 0.0 # 初始化损失值为0
+       # ave_loss = 0
+            # testing
+        correct, total, loss = 0, 0, 0.0
+
+        y_true = []
+        y_pred = []
+        accuracy = 0.0
+        ave_loss = 0.0
+        with torch.no_grad():
+            for data in testloader:
+                images, labels = data[0].to(DEVICE), data[1].to(DEVICE)
+        
+                # 使用神经网络模型进行前向传播
+                outputs = net(images)
+        
+                # 计算损失
+                loss += criterion(outputs, labels).item()
+        
+                # 计算预测的类别
+                _, predicted = torch.max(outputs.data, 1)
+        
+                # 统计总样本数和正确分类的样本数
+                total += labels.size(0)
+                correct += (predicted == labels).sum().item()
+        
+                # 计算滑动平均损失
+                ave_loss = ave_loss * 0.9 + loss * 0.1
+
+                # 将标签和预测结果转换为 NumPy 数组
+                y_true = labels.data.cpu().numpy()
+                y_pred = predicted.data.cpu().numpy()
+        
+                # 计算每个类别的召回率
+                acc = classification_report(y_true, y_pred, digits=4, output_dict=True)
+                # print("correct:\n",correct)
+                # print("total:\n",total)
+                accuracy = correct / total
+                #print("acc:\n",acc)
+                # 将每个类别的召回率写入 "recall-baseline.csv" 文件
+                # RecordRecall是用来存储每个类别的召回率（recall）值的元组
+                # RecordAccuracy是用来存储其他一些数据的元组，包括整体的准确率（accuracy）
+                #RecordRecall = []
+                RecordRecall = ()
+                RecordAccuracy = ()
+            
+                # labelCount = len(np.unique(y_train))# label數量
+                # print("labelCount:\n",labelCount)
+                # 将标签从GPU移动到CPU
+                y_train_cpu = y_train.cpu()
+
+                # 计算唯一值的数量
+                labelCount = len(np.unique(y_train_cpu))
+           
+                for i in range(labelCount):
+                    RecordRecall = RecordRecall + (acc[str(i)]['recall'],)
+                 
+                RecordAccuracy = RecordAccuracy + (accuracy, time.time() - start_IDS,)
+                RecordRecall = str(RecordRecall)[1:-1]
+
+                # 标志来跟踪是否已经添加了标题行
+                header_written = False
+                with open(f"./single_AnalyseReportFolder/recall-baseline_{client_str}.csv", "a+") as file:
+                    # file.write(str(RecordRecall))
+                    # file.writelines("\n")
+                    # 添加标题行
+                    #file.write("Label," + ",".join([str(i) for i in range(labelCount)]) + "\n")
+                    # 写入Recall数据
+                    file.write(f"Recall," + RecordRecall + "\n")
+        
+                # 将总体准确率和其他信息写入 "accuracy-baseline.csv" 文件
+                with open(f"./single_AnalyseReportFolder/accuracy-baseline_{client_str}.csv", "a+") as file:
+                    # file.write(str(RecordAccuracy))
+                    # file.writelines("\n")
+                    # 添加标题行
+                    file.write(f"Accuracy,Time\n")
+                    # 写入Accuracy数据
+                    file.write(str(RecordAccuracy) + "\n")
+
+                    # 生成分类报告
+                    GenrateReport = classification_report(y_true, y_pred, digits=4, output_dict=True)
+                    # 将字典转换为 DataFrame 并转置
+                    report_df = pd.DataFrame(GenrateReport).transpose()
+                    # 保存为 baseline_report 文件 "這邊會存最後一次的資料"
+                    report_df.to_csv(f"./single_AnalyseReportFolder/baseline_report_{client_str}.csv",header=True)
+                    # accuracy = correct / total
+    print("test_data:\n",len(test_data))
+    print("train_data:\n",len(train_data))
+    return accuracy
+
+
+
+
+# def test(net, testloader):
+#     print("test")
+#     # correct = 0
+    # total = 0
+    # loss = 0  # 初始化损失值为0
+    # ave_loss = 0
     # with torch.no_grad():
     #     for images, labels in tqdm(testloader):
     #         output = net(images)
@@ -101,84 +207,84 @@ def test(net, testloader):
     #         total += labels.size(0)
     #         correct += (predicted == labels).sum().item()
     # 迭代测试数据集
-    with torch.no_grad():
-        criterion = nn.CrossEntropyLoss()
-        for data in testloader:
-            images, labels = data[0].to(DEVICE), data[1].to(DEVICE)
+    # with torch.no_grad():
+    #     criterion = nn.CrossEntropyLoss()
+    #     for data in testloader:
+    #         images, labels = data[0].to(DEVICE), data[1].to(DEVICE)
         
-            # 使用神经网络模型进行前向传播
-            outputs = net(images)
+    #         # 使用神经网络模型进行前向传播
+    #         outputs = net(images)
         
-            # 计算损失
-            loss += criterion(outputs, labels).item()
+    #         # 计算损失
+    #         loss += criterion(outputs, labels).item()
         
-         # 计算预测的类别
-            _, predicted = torch.max(outputs.data, 1)
+    #      # 计算预测的类别
+    #         _, predicted = torch.max(outputs.data, 1)
         
-            # 统计总样本数和正确分类的样本数
-            total += labels.size(0)
-            correct += (predicted == labels).sum().item()
+    #         # 统计总样本数和正确分类的样本数
+    #         total += labels.size(0)
+    #         correct += (predicted == labels).sum().item()
         
-            # 计算滑动平均损失
-            ave_loss = ave_loss * 0.9 + loss * 0.1
+    #         # 计算滑动平均损失
+    #         ave_loss = ave_loss * 0.9 + loss * 0.1
 
-            # 将标签和预测结果转换为 NumPy 数组
-            y_true = labels.data.cpu().numpy()
-            y_pred = predicted.data.cpu().numpy()
+    #         # 将标签和预测结果转换为 NumPy 数组
+    #         y_true = labels.data.cpu().numpy()
+    #         y_pred = predicted.data.cpu().numpy()
         
-            # 计算每个类别的召回率
-            acc = classification_report(y_true, y_pred, digits=4, output_dict=True)
-            # print("correct:\n",correct)
-            # print("total:\n",total)
-            accuracy = correct / total
-            print("acc:\n",acc)
-            # 将每个类别的召回率写入 "recall-baseline.csv" 文件
-            # RecordRecall是用来存储每个类别的召回率（recall）值的元组
-            # RecordAccuracy是用来存储其他一些数据的元组，包括整体的准确率（accuracy）
-            #RecordRecall = []
-            RecordRecall = ()
-            RecordAccuracy = ()
+    #         # 计算每个类别的召回率
+    #         acc = classification_report(y_true, y_pred, digits=4, output_dict=True)
+    #         # print("correct:\n",correct)
+    #         # print("total:\n",total)
+    #         accuracy = correct / total
+    #         print("acc:\n",acc)
+    #         # 将每个类别的召回率写入 "recall-baseline.csv" 文件
+    #         # RecordRecall是用来存储每个类别的召回率（recall）值的元组
+    #         # RecordAccuracy是用来存储其他一些数据的元组，包括整体的准确率（accuracy）
+    #         #RecordRecall = []
+    #         RecordRecall = ()
+    #         RecordAccuracy = ()
             
-            labelCount = len(np.unique(y_train))# label數量
-            print("labelCount:\n",labelCount)
+    #         labelCount = len(np.unique(y_train))# label數量
+    #         print("labelCount:\n",labelCount)
            
-            for i in range(labelCount):
-                RecordRecall = RecordRecall + (acc[str(i)]['recall'],)
-                #RecordRecall.append(acc[str(i)]['recall'])    
-            RecordAccuracy = RecordAccuracy + (accuracy, time.time() - start_IDS,)
+    #         for i in range(labelCount):
+    #             RecordRecall = RecordRecall + (acc[str(i)]['recall'],)
+    #             #RecordRecall.append(acc[str(i)]['recall'])    
+    #         RecordAccuracy = RecordAccuracy + (accuracy, time.time() - start_IDS,)
           
 
-            RecordRecall = str(RecordRecall)[1:-1]
+    #         RecordRecall = str(RecordRecall)[1:-1]
 
-            # 标志来跟踪是否已经添加了标题行
-            header_written = False
-            with open(f"./single_AnalyseReportFolder/recall-baseline_{client_str}.csv", "a+") as file:
-                # file.write(str(RecordRecall))
-                # file.writelines("\n")
-                # 添加标题行
-                #file.write("Label," + ",".join([str(i) for i in range(labelCount)]) + "\n")
-                # 写入Recall数据
-                file.write(f"Recall," + RecordRecall + "\n")
+    #         # 标志来跟踪是否已经添加了标题行
+    #         header_written = False
+    #         with open(f"./single_AnalyseReportFolder/recall-baseline_{client_str}.csv", "a+") as file:
+    #             # file.write(str(RecordRecall))
+    #             # file.writelines("\n")
+    #             # 添加标题行
+    #             #file.write("Label," + ",".join([str(i) for i in range(labelCount)]) + "\n")
+    #             # 写入Recall数据
+    #             file.write(f"Recall," + RecordRecall + "\n")
         
-            # 将总体准确率和其他信息写入 "accuracy-baseline.csv" 文件
-            with open(f"./single_AnalyseReportFolder/accuracy-baseline_{client_str}.csv", "a+") as file:
-                # file.write(str(RecordAccuracy))
-                # file.writelines("\n")
-                # 添加标题行
-                file.write(f"Accuracy,Time\n")
-                # 写入Accuracy数据
-                file.write(str(RecordAccuracy) + "\n")
+    #         # 将总体准确率和其他信息写入 "accuracy-baseline.csv" 文件
+    #         with open(f"./single_AnalyseReportFolder/accuracy-baseline_{client_str}.csv", "a+") as file:
+    #             # file.write(str(RecordAccuracy))
+    #             # file.writelines("\n")
+    #             # 添加标题行
+    #             file.write(f"Accuracy,Time\n")
+    #             # 写入Accuracy数据
+    #             file.write(str(RecordAccuracy) + "\n")
 
-            # 生成分类报告
-            GenrateReport = classification_report(y_true, y_pred, digits=4, output_dict=True)
-            # 将字典转换为 DataFrame 并转置
-            report_df = pd.DataFrame(GenrateReport).transpose()
-            # 保存为 baseline_report 文件 "這邊會存最後一次的資料"
-            report_df.to_csv(f"./single_AnalyseReportFolder/baseline_report_{client_str}.csv",header=True)
-    accuracy = correct / total
-    print("test_data:\n",len(test_data))
-    print("train_data:\n",len(train_data))
-    return accuracy
+    #         # 生成分类报告
+    #         GenrateReport = classification_report(y_true, y_pred, digits=4, output_dict=True)
+    #         # 将字典转换为 DataFrame 并转置
+    #         report_df = pd.DataFrame(GenrateReport).transpose()
+    #         # 保存为 baseline_report 文件 "這邊會存最後一次的資料"
+    #         report_df.to_csv(f"./single_AnalyseReportFolder/baseline_report_{client_str}.csv",header=True)
+    # accuracy = correct / total
+    # print("test_data:\n",len(test_data))
+    # print("train_data:\n",len(train_data))
+    # return accuracy
 
     # ... Your testing logic ...
 
@@ -187,15 +293,15 @@ train_data = TensorDataset(x_train, y_train)
 test_data = TensorDataset(x_test, y_test)
 # trainloader = DataLoader(train_data, batch_size=20000, shuffle=True)
 # trainloader = DataLoader(train_data, batch_size=2000, shuffle=True)
-trainloader = DataLoader(train_data, batch_size=1000, shuffle=True)
+trainloader = DataLoader(train_data, batch_size=500, shuffle=True)
 testloader = DataLoader(test_data, batch_size=len(test_data), shuffle=False)
 
 # Initialize the neural network model
 net = Net().to(DEVICE)
 
 # Train the model
-train(net, trainloader, epochs=10)
+train(net, trainloader, epochs=500)
 
 # Evaluate the model
-accuracy = test(net, testloader)
-print("Test Accuracy:", accuracy)
+#accuracy = test(net, testloader)
+#print("Test Accuracy:", accuracy)
