@@ -202,26 +202,15 @@ test_dataframe = pd.read_csv(os.path.join(filepath, 'data', 'test_dataframes.csv
 # train_dataframe = pd.read_csv(os.path.join(filepath, 'data', 'train_dataframes.csv'))
 train_dataframe = pd.read_csv(os.path.join(filepath, 'data', 'train_df_half1.csv'))
 
-y_partial = np.array(partial_dataframe.iloc[:, -1])
 x_partial = np.array(partial_dataframe.iloc[:, :-1])
+y_partial = np.array(partial_dataframe.iloc[:, -1])
+
 #*************************************************
 x_train = np.array(train_dataframe.iloc[:, :-1])
-x_test = np.array(test_dataframe.iloc[:, :-1])
 y_train = np.array(train_dataframe.iloc[:, -1])
+
+x_test = np.array(test_dataframe.iloc[:, :-1])
 y_test = np.array(test_dataframe.iloc[:, -1])
-
-
-# x_train = np.load(filepath + "x_train_half1.npy", allow_pickle=True)
-# y_train = np.load(filepath + "y_train_half1.npy", allow_pickle=True)
-# x_train = torch.from_numpy(x_train).type(torch.FloatTensor)
-# y_train = torch.from_numpy(y_train).type(torch.LongTensor)
-
-# x_test = torch.from_numpy(x_test).type(torch.FloatTensor)
-# y_test = torch.from_numpy(y_test).type(torch.LongTensor)
-# x_train = x_train.to(device)
-# y_train = y_train.to(device)
-# x_test = x_test.to(device)
-# y_test = y_test.to(device)
 
 ########################   Finding Weak labels ##############################
 numOfSamples = 50
@@ -230,9 +219,14 @@ weakpoint =8
 
 #####################********** GAN Parameters  **************##############
             
-x_g=np.copy(x_partial)
-y_g=np.zeros(y_partial.shape)
+# x_g=np.copy(x_partial)
+# y_g=np.zeros(y_partial.shape)
 
+x_g=np.copy(x_train)
+y_g=np.zeros(y_train.shape)
+
+print("x_g",len(x_g))
+print("y_g",len(y_g))
 # 找到值為8的標籤的索引
 indices_8 = [index for index, value in enumerate(y_train) if value == 8]
 print(f"值为8的标签的索引: {indices_8}")
@@ -245,6 +239,8 @@ y_g[~np.isin(np.arange(len(y_g)), indices_8)] = 0
 
 
 data = [(x, y) for x, y in zip(x_g,y_g)]
+
+print("data",len(data))
 dataSet=Data_Loader(data)
 data_loader = DataLoader(dataset=dataSet, batch_size=256, shuffle=True)
 discriminator = DiscriminatorNet().to(device)
@@ -268,7 +264,7 @@ num_epochs = 1
 d_errs = torch.Tensor([])  # 初始化为空张量
 g_errs = torch.Tensor([])  # 初始化为空张量
 
-print("data_loader:",data_loader)
+print("data_loader",len(data_loader))
 for epoch in range(num_epochs):
     print("epoch: ",epoch)
     g_error_sum=0
@@ -276,8 +272,13 @@ for epoch in range(num_epochs):
     #第二個 for 循環主要是執行 GAN（生成對抗網絡）的訓練過程，包括訓練鑑別器（Discriminator）和生成器（Generator）以及生成新的數據
     for n_batch, (real_batch,y_real) in enumerate(data_loader):
         
-        # n_batch 是當前批次的索引
-        print(n_batch)
+        print("n_batch",n_batch)
+        print("real_batch",len(real_batch))
+        print("y_real",len(y_real))
+        print("data_loader",len(data_loader))
+        # 使用 n_batch 來知道正在處理的是第幾個批次
+        # n_batch 是當前批次的索引 它從 0 開始遞增，直到 data_loader 中的所有批次都被處理
+        # print(n_batch)
         #real_batch.size(0) 給出了當前批次中包含的樣本數量。
         #例如，如果 real_batch 是一個形狀為 (256, 100) 的張量，那麼 real_batch.size(0) 將返回 256，表示這個批次包含了 256 個樣本
         # 表示當前批次包含了多少筆數據
@@ -340,8 +341,14 @@ for epoch in range(num_epochs):
                 # plt.show()
 
         ############  Generating and adding new samples  ###########
+        # GAN 訓練中，每個批次產生了多少筆資料，您可以查看變數 numOfSamples
+        # numOfSamples 表示每個批次中生成的假資料的數量。您可以使用以下方式獲得每個批次生成的資料筆數：
         x_syn=(generator(noise(numOfSamples))).detach().to(device).cpu().numpy() # (generator) 生成的假特徵數據
+
+        # 將y_syn設定為一個具有相同形狀的numOfSamples的數組，並將每個元素設為weakpoint。這裡，weakpoint是生成假數據的標籤
+        # numOfSamples是50，並將它們的標籤都設置為weakpoint，即8。因此，生成的50個假樣本的標籤都是8
         y_syn=np.ones(numOfSamples)*weakpoint #這是與 x_syn 相關的標籤（labels）。在這裡，所有這些假數據的標籤都被設置為 weakpoint
+        print("Number of samples generated in current batch:", numOfSamples)
         #************************************************
         x_train=np.concatenate((x_train,x_syn),axis=0)
         y_train=np.concatenate((y_train,y_syn),axis=0)
@@ -354,5 +361,5 @@ for epoch in range(num_epochs):
 
         # 保存合并后的DataFrame为CSV文件
         combined_data.to_csv(f'combined_data_{num_epochs}.csv', index=False)
-        # print("Shapes: ")
-        # print(x_train.shape,y_train.shape)
+        print("Shapes: ")#顯示 (資料筆數, 特徵數)。
+        print(x_train.shape,y_train.shape)#顯示 (資料筆數,)，因為這是一維的標籤數組
