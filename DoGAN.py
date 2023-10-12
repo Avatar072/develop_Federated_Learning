@@ -28,7 +28,8 @@ from mytoolfunction import SaveDataToCsvfile, generatefolder, mergeDataFrameToCs
 
 filepath = "D:\\Labtest20230911\\"
 start_IDS = time.time()
-
+# 檢查是否有可用的GPU
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 # #############################################################################
 class Data_Loader(): 
     def __init__(self, data_list):       
@@ -47,28 +48,28 @@ def noise(size):
     '''
     Generates a 1-d vector of gaussian sampled random values
     '''
-    n = Variable(torch.randn(size, 100))
+    n = Variable(torch.randn(size, 100)).to(device)
     return n
 
 def ones_target(size):
     '''
     Tensor containing zeros, with shape = size
     '''
-    data = Variable(torch.ones(size, 1))
+    data = Variable(torch.ones(size, 1)).to(device)
     return data
 
 def zeros_target(size):
     '''
     Tensor containing zeros, with shape = size
     '''
-    data = Variable(torch.zeros(size, 1))
+    data = Variable(torch.zeros(size, 1)).to(device)
     return data
 
 def true_target(y):
     '''
     Tensor containing zeros, with shape = size
     '''
-    data = Variable(torch.from_numpy(y).type(torch.FloatTensor))
+    data = Variable(torch.from_numpy(y).type(torch.FloatTensor)).to(device)
     return data
 
 #### model generation for discriminator
@@ -149,7 +150,7 @@ def train_discriminator(optimizer, real_data, fake_data, y_real):
     N = real_data.size(0)
     # Reset gradients
     optimizer.zero_grad()
-    y_real = y_real.float()  # Convert y_real to Float data type
+    y_real = y_real.float().to(real_data.device)  # Convert y_real to Float data type
     # 1.1 Train on Real Data
     prediction_real = discriminator(real_data) #real_data為1
     # Calculate error and backpropagate
@@ -212,7 +213,15 @@ y_test = np.array(test_dataframe.iloc[:, -1])
 
 # x_train = np.load(filepath + "x_train_half1.npy", allow_pickle=True)
 # y_train = np.load(filepath + "y_train_half1.npy", allow_pickle=True)
+# x_train = torch.from_numpy(x_train).type(torch.FloatTensor)
+# y_train = torch.from_numpy(y_train).type(torch.LongTensor)
 
+# x_test = torch.from_numpy(x_test).type(torch.FloatTensor)
+# y_test = torch.from_numpy(y_test).type(torch.LongTensor)
+# x_train = x_train.to(device)
+# y_train = y_train.to(device)
+# x_test = x_test.to(device)
+# y_test = y_test.to(device)
 
 ########################   Finding Weak labels ##############################
 numOfSamples = 50
@@ -223,8 +232,7 @@ weakpoint =8
             
 x_g=np.copy(x_partial)
 y_g=np.zeros(y_partial.shape)
-indices = [index for index, value in enumerate(y_train) if value == 8]
-print(f"值为8的标签的索引: {indices}")
+
 # 找到值為8的標籤的索引
 indices_8 = [index for index, value in enumerate(y_train) if value == 8]
 print(f"值为8的标签的索引: {indices_8}")
@@ -239,8 +247,8 @@ y_g[~np.isin(np.arange(len(y_g)), indices_8)] = 0
 data = [(x, y) for x, y in zip(x_g,y_g)]
 dataSet=Data_Loader(data)
 data_loader = DataLoader(dataset=dataSet, batch_size=256, shuffle=True)
-discriminator = DiscriminatorNet()
-generator = GeneratorNet()
+discriminator = DiscriminatorNet().to(device)
+generator = GeneratorNet().to(device)
 
 ###########################################################
 d_optimizer = optim.Adam(discriminator.parameters(), lr=0.0002)
@@ -254,7 +262,7 @@ test_noise = noise(num_test_samples)
 #*********************************************  Running GAN   ***************************
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         
-num_epochs = 10
+num_epochs = 1
 # d_errs=[]
 # g_errs=[]
 d_errs = torch.Tensor([])  # 初始化为空张量
@@ -265,18 +273,30 @@ for epoch in range(num_epochs):
     print("epoch: ",epoch)
     g_error_sum=0
     d_error_sum=0
+    #第二個 for 循環主要是執行 GAN（生成對抗網絡）的訓練過程，包括訓練鑑別器（Discriminator）和生成器（Generator）以及生成新的數據
     for n_batch, (real_batch,y_real) in enumerate(data_loader):
-        N = real_batch.size(0)#當下batch_size的長度
+        
+        # n_batch 是當前批次的索引
+        print(n_batch)
+        #real_batch.size(0) 給出了當前批次中包含的樣本數量。
+        #例如，如果 real_batch 是一個形狀為 (256, 100) 的張量，那麼 real_batch.size(0) 將返回 256，表示這個批次包含了 256 個樣本
+        # 表示當前批次包含了多少筆數據
+        N = real_batch.size(0)
+
+        # 訓練鑑別器（Discriminator）：
+        # 首先，將實際數據（真實圖像）設置為 real_data。
+        # 接著，生成假數據（fake data）並使用 generator 生成器生成它們，同時使用 .detach() 函數將梯度從生成器的結果中分離出來，這是為了確保只訓練鑑別器，不訓練生成器。
+        # 調用 train_discriminator 函數，該函數執行鑑別器的訓練，並計算鑑別器的損失（d_error）和相關預測（d_pred_real 和 d_pred_fake）。
 
         # 1. Train Discriminator
-        real_data = Variable(real_batch)
+        real_data = Variable(real_batch).to(device)
         #real_target=Variable(real_target)
         # Generate fake data and detach 
 
         #print(real_data.shape)
-
+        # generator透過 noise 產生假資料    
         # (so gradients are not calculated for generator)
-        fake_data = generator(noise(N)).detach()
+        fake_data = generator(noise(N)).detach().to(device)
 
         # Train D
         d_error, d_pred_real, d_pred_fake = train_discriminator(d_optimizer, real_data, fake_data,y_real)
@@ -284,7 +304,7 @@ for epoch in range(num_epochs):
         # 2. Train Generator
 
         # Generate fake data
-        fake_data = generator(noise(N))
+        fake_data = generator(noise(N)).to(device)
         # Train G
         g_error = train_generator(g_optimizer, fake_data)
 
@@ -320,7 +340,7 @@ for epoch in range(num_epochs):
                 # plt.show()
 
         ############  Generating and adding new samples  ###########
-        x_syn=(generator(noise(numOfSamples))).detach().numpy() # (generator) 生成的假特徵數據
+        x_syn=(generator(noise(numOfSamples))).detach().to(device).cpu().numpy() # (generator) 生成的假特徵數據
         y_syn=np.ones(numOfSamples)*weakpoint #這是與 x_syn 相關的標籤（labels）。在這裡，所有這些假數據的標籤都被設置為 weakpoint
         #************************************************
         x_train=np.concatenate((x_train,x_syn),axis=0)
@@ -333,6 +353,6 @@ for epoch in range(num_epochs):
         combined_data = pd.concat([df_x_train, df_y_train], axis=1)
 
         # 保存合并后的DataFrame为CSV文件
-        combined_data.to_csv(f'combined_data.csv', index=False)
+        combined_data.to_csv(f'combined_data_{num_epochs}.csv', index=False)
         # print("Shapes: ")
         # print(x_train.shape,y_train.shape)
