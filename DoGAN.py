@@ -213,6 +213,7 @@ x_test = np.array(test_dataframe.iloc[:, :-1])
 y_test = np.array(test_dataframe.iloc[:, -1])
 
 ########################   Finding Weak labels ##############################
+# numOfSamples = 50
 numOfSamples = 50
 recall_threshold = 0.94
 weakpoint =8 
@@ -258,7 +259,7 @@ test_noise = noise(num_test_samples)
 #*********************************************  Running GAN   ***************************
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         
-num_epochs = 1
+num_epochs = 100
 # d_errs=[]
 # g_errs=[]
 d_errs = torch.Tensor([])  # 初始化为空张量
@@ -270,7 +271,7 @@ for epoch in range(num_epochs):
     g_error_sum=0
     d_error_sum=0
     #第二個 for 循環主要是執行 GAN（生成對抗網絡）的訓練過程，包括訓練鑑別器（Discriminator）和生成器（Generator）以及生成新的數據
-    for n_batch, (real_batch,y_real) in enumerate(data_loader):
+    for n_batch, (real_batch,y_real) in enumerate(data_loader):# 一次復盤完，就生一次資料去考試
         
         print("n_batch",n_batch)
         print("real_batch",len(real_batch))
@@ -307,6 +308,7 @@ for epoch in range(num_epochs):
         # Generate fake data
         fake_data = generator(noise(N)).to(device)
         # Train G
+        # train_generator裡面會做覆盤，每次訓練持續告訴優化器哪邊還可以優化
         g_error = train_generator(g_optimizer, fake_data)
 
         g_error_sum+=g_error
@@ -339,27 +341,23 @@ for epoch in range(num_epochs):
             #     plt.plot(d_errs.detach().numpy())
             #     plt.plot(g_errs.detach().numpy())
                 # plt.show()
+############  Generating and adding new samples  ###########
+x_syn=(generator(noise(numOfSamples))).detach().to(device).cpu().numpy() # (generator) 生成的假特徵數據
+y_syn=np.ones(numOfSamples)*weakpoint #這是與 x_syn 相關的標籤（labels）。在這裡，所有這些假數據的標籤都被設置為 weakpoint
 
-        ############  Generating and adding new samples  ###########
-        # GAN 訓練中，每個批次產生了多少筆資料，您可以查看變數 numOfSamples
-        # numOfSamples 表示每個批次中生成的假資料的數量。您可以使用以下方式獲得每個批次生成的資料筆數：
-        x_syn=(generator(noise(numOfSamples))).detach().to(device).cpu().numpy() # (generator) 生成的假特徵數據
+print("Number of samples generated in current batch:", numOfSamples)
+#************************************************
+x_train=np.concatenate((x_train,x_syn),axis=0)
+y_train=np.concatenate((y_train,y_syn),axis=0)
+# mergeDataFrameToCsv(x_train,y_train)
+df_x_train = pd.DataFrame(x_train)
+df_y_train = pd.DataFrame(y_train)
 
-        # 將y_syn設定為一個具有相同形狀的numOfSamples的數組，並將每個元素設為weakpoint。這裡，weakpoint是生成假數據的標籤
-        # numOfSamples是50，並將它們的標籤都設置為weakpoint，即8。因此，生成的50個假樣本的標籤都是8
-        y_syn=np.ones(numOfSamples)*weakpoint #這是與 x_syn 相關的標籤（labels）。在這裡，所有這些假數據的標籤都被設置為 weakpoint
-        print("Number of samples generated in current batch:", numOfSamples)
-        #************************************************
-        x_train=np.concatenate((x_train,x_syn),axis=0)
-        y_train=np.concatenate((y_train,y_syn),axis=0)
-        # mergeDataFrameToCsv(x_train,y_train)
-        df_x_train = pd.DataFrame(x_train)
-        df_y_train = pd.DataFrame(y_train)
+# 使用concat函数将它们合并
+combined_data = pd.concat([df_x_train, df_y_train], axis=1)
+# 保存合并后的DataFrame为CSV文件
+combined_data.to_csv(f'combined_data_08.csv', index=False)
 
-        # 使用concat函数将它们合并
-        combined_data = pd.concat([df_x_train, df_y_train], axis=1)
-
-        # 保存合并后的DataFrame为CSV文件
-        combined_data.to_csv(f'combined_data_{num_epochs}.csv', index=False)
-        print("Shapes: ")#顯示 (資料筆數, 特徵數)。
-        print(x_train.shape,y_train.shape)#顯示 (資料筆數,)，因為這是一維的標籤數組
+# mergeDataFrameToCsv(df_x_train,df_y_train,weakpoint)
+print("Shapes: ")#顯示 (資料筆數, 特徵數)。
+print(x_train.shape,y_train.shape)#顯示 (資料筆數,)，因為這是一維的標籤數組
