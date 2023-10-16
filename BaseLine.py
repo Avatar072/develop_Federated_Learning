@@ -14,8 +14,7 @@ warnings.filterwarnings("ignore")#https://blog.csdn.net/qq_43391414/article/deta
 from torch.utils.data import DataLoader, TensorDataset
 from tqdm import tqdm
 
-
-
+####################################################################################################
 filepath = "D:\\Labtest20230911\\"
 start_IDS = time.time()
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -83,9 +82,10 @@ class Net(nn.Module):
 def train(net, trainloader, epochs):
     print("訓練中")
     criterion = nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, net.parameters()), lr=1e-4)
+    optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, net.parameters()), lr=0.0001)
 
     for epoch in range(epochs):
+        print("epoch",epoch)
         net.train()# PyTorch 中的一個方法，模型切換為訓練模式
         for images, labels in tqdm(trainloader):
             optimizer.zero_grad()
@@ -94,13 +94,13 @@ def train(net, trainloader, epochs):
             loss = criterion(output, labels)
             loss.backward()
             optimizer.step()
-
+        ###訓練的過程    
         test_accuracy = test(net, testloader, start_IDS, client_str)
         print(f"訓練週期 [{epoch+1}/{epochs}] - 測試準確度: {test_accuracy:.4f}")
 
 # 定義測試函數
 def test(net, testloader, start_time, client_str):
-    print("測試中")
+    # print("測試中")
     criterion = nn.CrossEntropyLoss()
     correct = 0
     total = 0
@@ -125,7 +125,7 @@ def test(net, testloader, start_time, client_str):
             y_pred = predicted.data.cpu().numpy()
         
             # 計算每個類別的召回率
-            acc = classification_report(y_true, y_pred, digits=4, output_dict=True,zero_division=1)
+            acc = classification_report(y_true, y_pred, digits=4, output_dict=True)
             accuracy = correct / total
 
             # 將每個類別的召回率寫入 "recall-baseline.csv" 檔案
@@ -143,14 +143,14 @@ def test(net, testloader, start_time, client_str):
             header_written = False
             with open(f"./single_AnalyseReportFolder/recall-baseline_{client_str}.csv", "a+") as file:
                 if not header_written:
-                    file.write("標籤," + ",".join([str(i) for i in range(labelCount)]) + "\n")
+                    # file.write("標籤," + ",".join([str(i) for i in range(labelCount)]) + "\n")
                     header_written = True
-                file.write(f"召回率," + RecordRecall + "\n")
+                file.write(str(RecordRecall) + "\n")
         
             # 將總體準確度和其他信息寫入 "accuracy-baseline.csv" 檔案
             with open(f"./single_AnalyseReportFolder/accuracy-baseline_{client_str}.csv", "a+") as file:
                 if not header_written:
-                    file.write("標籤," + ",".join([str(i) for i in range(labelCount)]) + "\n")
+                    # file.write("標籤," + ",".join([str(i) for i in range(labelCount)]) + "\n")
                     header_written = True
                 file.write(f"精確度,時間\n")
                 file.write(f"{accuracy},{time.time() - start_time}\n")
@@ -158,11 +158,7 @@ def test(net, testloader, start_time, client_str):
                 # 生成分類報告
                 GenrateReport = classification_report(y_true, y_pred, digits=4, output_dict=True)
                 report_df = pd.DataFrame(GenrateReport).transpose()
-                report_df.to_csv(f"./single_AnalyseReportFolder/baseline_report_{client_str}.csv",header=True)
-    
-    print("測試數據量:\n", len(test_data))
-    print("訓練數據量:\n", len(train_data))
-    
+                report_df.to_csv(f"./single_AnalyseReportFolder/baseline_report_{client_str}.csv",header=True)    
     accuracy = correct / total
     print(f"測試準確度: {accuracy:.4f}")
     return accuracy
@@ -177,8 +173,10 @@ testloader = DataLoader(test_data, batch_size=len(test_data), shuffle=False)
 net = Net().to(DEVICE)
 
 # 訓練模型
-train(net, trainloader, epochs=10)
+train(net, trainloader, epochs=500)
 
 # 評估模型
 test_accuracy = test(net, testloader, start_IDS, client_str)
+print("測試數據量:\n", len(test_data))
+print("訓練數據量:\n", len(train_data))
 print(f"最終測試準確度: {test_accuracy:.4f}")

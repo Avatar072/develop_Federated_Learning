@@ -3,6 +3,10 @@ import pandas as pd
 import numpy as np
 import argparse
 
+
+### 生成列名列表
+column_names = ["principal_Component" + str(i) for i in range(1, 79)] + ["Label"]
+
 ### 檢查資料夾是否存在 回傳True表示沒存在
 def CheckFolderExists (folder_name):
     if not os.path.exists(folder_name):
@@ -58,16 +62,20 @@ def mergeDataFrameAndSaveToCsv(trainingtype, x_train,y_train, filename, epochs):
 
     # 保存合并后的DataFrame为CSV文件
     if trainingtype == "GAN":
+        generateNewdata.columns = column_names
         SaveDataToCsvfile(generateNewdata, f"{trainingtype}_data_{filename}", f"{trainingtype}_data_{filename}_epochs_{epochs}")
     else:
         SaveDataToCsvfile(generateNewdata, f"{filename}_epochs_{epochs}")
 
-def ParseCommandLineArgs():
+def ParseCommandLineArgs(commands):
     
     # e.g
     # python BaseLine.py -h
     # python BaseLine.py --dataset train_half1
     # python BaseLine.py --dataset train_half2
+    # python BaseLine.py --epochs 100
+    # python BaseLine.py --dataset train_half1 --epochs 100
+    # python DoGAN.py --dataset train_half1 --epochs 10 --weaklabel 8
     # default='train_half1'
     # 创建命令行参数解析器
     parser = argparse.ArgumentParser(description='Federated Learning Client')
@@ -75,9 +83,31 @@ def ParseCommandLineArgs():
     # 添加一个参数来选择数据集
     parser.add_argument('--dataset', type=str, choices=['train_half1', 'train_half2'], default='train_half1',
                         help='Choose the dataset for training (train_half1 or train_half2)')
+
+    # 添加一个参数来设置训练的轮数
+    parser.add_argument('--epochs', type=int, default=100, help='Number of training epochs')
+
+     # 添加一个参数来设置训练的轮数
+    parser.add_argument('--weaklabel', type=int, default=8, help='encode of weak label')
+
     # 解析命令行参数
     args = parser.parse_args()
-    return args
+
+    # 根据输入的命令列表来确定返回的参数
+    if 'dataset' in commands and 'epochs' in commands and 'weaklabel' in commands:
+        return args.dataset, args.epochs, args.weaklabel
+    elif 'dataset' in commands and 'epochs' in commands:
+        return args.dataset, args.epochs
+    elif 'dataset' in commands:
+        return args.dataset
+    elif 'epochs' in commands:
+        return args.epochs
+
+# 测试不同的命令
+print(ParseCommandLineArgs(['dataset']))
+print(ParseCommandLineArgs(['epochs']))
+print(ParseCommandLineArgs(['dataset', 'epochs']))
+print(ParseCommandLineArgs(['dataset', 'epochs', 'label']))
 
 def ChooseTrainDatastes(filepath, my_command):
     # 加载选择的数据集

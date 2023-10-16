@@ -35,16 +35,14 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 ######################## Choose Dataset ##############################
 # 根据命令行参数选择数据集
 # python DoGAN.py --dataset train_half1
-args = ParseCommandLineArgs("dataset")
-file = args.dataset
+file, num_epochs, weakLabel= ParseCommandLineArgs(["dataset", "epochs","weaklabel"])
 print(f"Dataset: {file}")
 
 # args1 = ParseCommandLineArgs("epochs")
-num_epochs = 1
+# num_epochs = 1
 print(f"Number of epochs: {num_epochs}")
-
-# 生成列名列表
-column_names = ["principal_Component" + str(i) for i in range(1, 79)] + ["Label"]
+print(f"weakLabel code: {weakLabel}")
+weakpoint = weakLabel
 
 
 # 调用 load_selected_dataset 函数，它将返回 x_train、y_train 和 client_str
@@ -53,7 +51,6 @@ print(client_str)
 
 ########################  Weak labels and numOfSamples ##############################
 numOfSamples = 50
-weakpoint =8 
 # #############################################################################
 class Data_Loader(): 
     def __init__(self, data_list):       
@@ -230,7 +227,7 @@ print("x_g",len(x_g))
 print("y_g",len(y_g))
 # 找到值為8的標籤的索引
 indices_8 = [index for index, value in enumerate(y_train) if value == weakpoint]
-print(f"值为8的标签的索引: {indices_8}")
+print(f"值为{weakpoint}的标签的索引: {indices_8}")
 # 將值為8的標籤標記為“真實”或“正類別”
 y_g[indices_8==weakpoint] = 1 #y_g[y_partial==weakpoint]=1 #等於1表示標記為“真實”或“正類別”特定類別（在這裡是 類別）標記為1，而其他類別標記為0
 
@@ -360,12 +357,12 @@ print("透過GAN生成出來的資料Shapes: ")#顯示 (資料筆數, 特徵數)
 print(x_syn.shape,y_syn.shape)#顯示 (資料筆數,)，因為這是一維的標籤數組
 print("Number of samples generated in current batch:", numOfSamples)
 #************************************************
-newdata = pd.read_csv(f"D:\\Labtest20230911\\GAN_data_train_half1\\GAN_data_{file}_epochs_{num_epochs}.csv")
+newdata = pd.read_csv(filepath + f"GAN_data_train_half1\\GAN_data_{file}_epochs_{num_epochs}.csv")
 # newdata = newdata.iloc[1:]
 train_dataframe = pd.read_csv(os.path.join(filepath, 'data', 'train_df_half1.csv'))
 #第一列名稱要一樣append時才部會往外跑
 train_dataframe = train_dataframe.append(newdata)
-train_dataframe.to_csv(f"D:\\Labtest20230911\\GAN_data_train_half1\\GAN_data_weakpoint_{weakpoint}.csv", index=False)
+train_dataframe.to_csv(filepath+ f"GAN_data_train_half1\\GAN_data_weakpoint_{weakpoint}.csv", index=False)
 
 
 
