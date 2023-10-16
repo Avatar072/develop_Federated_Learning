@@ -23,13 +23,37 @@ from torch.autograd import Variable
 from torch import Tensor
 import torch.optim as optim
 import matplotlib.pyplot as plt
+from sklearn.decomposition import PCA
 # 引用 datasetsPreprocess.py 中的函數
-from mytoolfunction import SaveDataToCsvfile, generatefolder, mergeDataFrameToCsv
+from mytoolfunction import SaveDataToCsvfile, generatefolder, mergeDataFrameAndSaveToCsv, ChooseTrainDatastes, ParseCommandLineArgs
 
 filepath = "D:\\Labtest20230911\\"
 start_IDS = time.time()
 # 檢查是否有可用的GPU
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+######################## Choose Dataset ##############################
+# 根据命令行参数选择数据集
+# python DoGAN.py --dataset train_half1
+args = ParseCommandLineArgs("dataset")
+file = args.dataset
+print(f"Dataset: {file}")
+
+# args1 = ParseCommandLineArgs("epochs")
+num_epochs = 10
+print(f"Number of epochs: {num_epochs}")
+
+# 生成列名列表
+column_names = ["principal_Component" + str(i) for i in range(1, 79)] + ["Label"]
+
+
+# 调用 load_selected_dataset 函数，它将返回 x_train、y_train 和 client_str
+x_train, y_train, client_str = ChooseTrainDatastes(filepath, file)
+print(client_str)
+
+########################  Weak labels and numOfSamples ##############################
+numOfSamples = 50
+weakpoint =8 
 # #############################################################################
 class Data_Loader(): 
     def __init__(self, data_list):       
@@ -83,19 +107,19 @@ class DiscriminatorNet(torch.nn.Module):
         n_out = 1 #這邊的1是因為forward return實際的值是切0~1之間
         
         self.hidden0 = nn.Sequential( 
-            nn.Linear(n_features, 64),
+            nn.Linear(n_features, 512),
             nn.Tanh()
             #nn.Dropout(0.3)
         )
         
         self.hidden1 = nn.Sequential(
-            nn.Linear(64, 32),
+            nn.Linear(512, 512),
             nn.Tanh()
             #nn.Dropout(0.3)
         )
         
         self.out = nn.Sequential(
-            torch.nn.Linear(32, n_out),
+            torch.nn.Linear(512, n_out),
             torch.nn.Sigmoid()
         )
 
@@ -120,17 +144,17 @@ class GeneratorNet(torch.nn.Module):
         n_out = 78  # 要生產資料集特征的数量匹配的假資料
         
         self.hidden0 = nn.Sequential(
-            nn.Linear(n_noise, 64),
+            nn.Linear(n_noise, 512),
             nn.Tanh()
         )
         
         self.hidden1 = nn.Sequential(            
-            nn.Linear(64, 32),
+            nn.Linear(512, 512),
             nn.Tanh()
         )
         
         self.out = nn.Sequential(
-            nn.Linear(32, n_out),
+            nn.Linear(512, n_out),
             nn.Tanh()
         )
 
@@ -195,34 +219,10 @@ def train_generator(optimizer, fake_data):
     # Return error
     return error
 
-#################  Partial Data  ##################
-#total_encoded_updated是只取10000筆的dataframe
-partial_dataframe = pd.read_csv(os.path.join(filepath, 'data', 'total_encoded_updated.csv'))
-test_dataframe = pd.read_csv(os.path.join(filepath, 'data', 'test_dataframes.csv'))
-# train_dataframe = pd.read_csv(os.path.join(filepath, 'data', 'train_dataframes.csv'))
-train_dataframe = pd.read_csv(os.path.join(filepath, 'data', 'train_df_half1.csv'))
 
-x_partial = np.array(partial_dataframe.iloc[:, :-1])
-y_partial = np.array(partial_dataframe.iloc[:, -1])
-
-#*************************************************
-x_train = np.array(train_dataframe.iloc[:, :-1])
-y_train = np.array(train_dataframe.iloc[:, -1])
-
-x_test = np.array(test_dataframe.iloc[:, :-1])
-y_test = np.array(test_dataframe.iloc[:, -1])
-
-########################   Finding Weak labels ##############################
-# numOfSamples = 50
-numOfSamples = 50
-recall_threshold = 0.94
-weakpoint =8 
 
 #####################********** GAN Parameters  **************##############
             
-# x_g=np.copy(x_partial)
-# y_g=np.zeros(y_partial.shape)
-
 x_g=np.copy(x_train)
 y_g=np.zeros(y_train.shape)
 
@@ -259,7 +259,7 @@ test_noise = noise(num_test_samples)
 #*********************************************  Running GAN   ***************************
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         
-num_epochs = 100
+# num_epochs = 1
 # d_errs=[]
 # g_errs=[]
 d_errs = torch.Tensor([])  # 初始化为空张量
@@ -273,10 +273,10 @@ for epoch in range(num_epochs):
     #第二個 for 循環主要是執行 GAN（生成對抗網絡）的訓練過程，包括訓練鑑別器（Discriminator）和生成器（Generator）以及生成新的數據
     for n_batch, (real_batch,y_real) in enumerate(data_loader):# 一次復盤完，就生一次資料去考試
         
-        print("n_batch",n_batch)
-        print("real_batch",len(real_batch))
-        print("y_real",len(y_real))
-        print("data_loader",len(data_loader))
+        # print("n_batch",n_batch)
+        # print("real_batch",len(real_batch))
+        # print("y_real",len(y_real))
+        # print("data_loader",len(data_loader))
         # 使用 n_batch 來知道正在處理的是第幾個批次
         # n_batch 是當前批次的索引 它從 0 開始遞增，直到 data_loader 中的所有批次都被處理
         # print(n_batch)
@@ -320,44 +320,46 @@ for epoch in range(num_epochs):
 
 
 
-            # d_errs.append(d_error_sum)
-            # g_errs.append(g_error_sum)  
+        # d_errs.append(d_error_sum)
+        # g_errs.append(g_error_sum)  
 
-            # if (epoch) % 10 == 0:
-            #     print("epoch: ",epoch)
-            #     test_noise = noise(num_test_samples)
-            #     test_images =(generator(test_noise))
-            #     test_images = test_images.data
-            #     real_data=real_data.data
+        # if (epoch) % 10 == 0:
+        #     print("epoch: ",epoch)
+        #     test_noise = noise(num_test_samples)
+        #     test_images =(generator(test_noise))
+        #     test_images = test_images.data
+        #     real_data=real_data.data
 
 
-            #     plt.plot()
-            #     plt.scatter(real_data[:,0][y_real==1], real_data[:,1][y_real==1], s=40, marker='x',c='red')
-            #     plt.scatter(real_data[:,0][y_real==0], real_data[:,1][y_real==0], s=40, marker='o',c='blue')
-            #     plt.scatter(test_images[:,0], test_images[:,1], s=40, marker='p',c='green')
-            #     plt.axis('equal')
-            #     # plt.show()
-            #     plt.plot()
-            #     plt.plot(d_errs.detach().numpy())
-            #     plt.plot(g_errs.detach().numpy())
-                # plt.show()
+        #     plt.plot()
+        #     plt.scatter(real_data[:,0][y_real==1], real_data[:,1][y_real==1], s=40, marker='x',c='red')
+        #     plt.scatter(real_data[:,0][y_real==0], real_data[:,1][y_real==0], s=40, marker='o',c='blue')
+        #     plt.scatter(test_images[:,0], test_images[:,1], s=40, marker='p',c='green')
+        #     plt.axis('equal')
+        #     plt.show()
+        #     plt.plot()
+        #     plt.plot(d_errs.detach().numpy())
+        #     plt.plot(g_errs.detach().numpy())
+        #     plt.show()
+
+
 ############  Generating and adding new samples  ###########
-x_syn=(generator(noise(numOfSamples))).detach().to(device).cpu().numpy() # (generator) 生成的假特徵數據
+# numOfSamples 表示生成的假資料的數量，用(generator) 生成的假特徵數據
+x_syn=(generator(noise(numOfSamples))).detach().to(device).cpu().numpy() 
+# 將y_syn設定為一個具有相同形狀的numOfSamples的數組，並將每個元素設為weakpoint。這裡，weakpoint是生成假數據的標籤
+# numOfSamples是50，並將它們的標籤都設置為weakpoint，即8。因此，生成標籤都是8的50個假樣本
 y_syn=np.ones(numOfSamples)*weakpoint #這是與 x_syn 相關的標籤（labels）。在這裡，所有這些假數據的標籤都被設置為 weakpoint
 
+#保存透過GAN生出來的資料
+mergeDataFrameAndSaveToCsv("GAN", x_syn, y_syn, file, num_epochs)
+print("透過GAN生成出來的資料Shapes: ")#顯示 (資料筆數, 特徵數)。
+print(x_syn.shape,y_syn.shape)#顯示 (資料筆數,)，因為這是一維的標籤數組
 print("Number of samples generated in current batch:", numOfSamples)
 #************************************************
-x_train=np.concatenate((x_train,x_syn),axis=0)
-y_train=np.concatenate((y_train,y_syn),axis=0)
-# mergeDataFrameToCsv(x_train,y_train)
-df_x_train = pd.DataFrame(x_train)
-df_y_train = pd.DataFrame(y_train)
+# x_train=np.concatenate((x_train,x_syn),axis=0)
+# y_train=np.concatenate((y_train,y_syn),axis=0)
 
-# 使用concat函数将它们合并
-combined_data = pd.concat([df_x_train, df_y_train], axis=1)
-# 保存合并后的DataFrame为CSV文件
-combined_data.to_csv(f'combined_data_08.csv', index=False)
+# print("Shapes: ")#顯示 (資料筆數, 特徵數)。
+# print(x_train.shape,y_train.shape)#顯示 (資料筆數,)，因為這是一維的標籤數組
 
-# mergeDataFrameToCsv(df_x_train,df_y_train,weakpoint)
-print("Shapes: ")#顯示 (資料筆數, 特徵數)。
-print(x_train.shape,y_train.shape)#顯示 (資料筆數,)，因為這是一維的標籤數組
+# print("combined_data\n",generateNewdata['Label'].value_counts())
