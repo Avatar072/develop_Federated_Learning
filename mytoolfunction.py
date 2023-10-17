@@ -42,7 +42,7 @@ def generatefolder(folder_name):
         folder_name = "my_AnalyseReportfolder"
 
     file_not_exists  = CheckFolderExists(folder_name)
-    print("file_not_exists",file_not_exists)
+    print("file_not_exists:",file_not_exists)
     # 使用os.path.exists()檢文件夹是否存在
     if file_not_exists:
         # 如果文件夹不存在，就创建它
@@ -52,7 +52,7 @@ def generatefolder(folder_name):
         print(f"資料夾 '{folder_name}' 已存在，不需再創建。")
 
 ### 合併DataFrame成csv
-def mergeDataFrameAndSaveToCsv(trainingtype, x_train,y_train, filename, epochs):
+def mergeDataFrameAndSaveToCsv(trainingtype, x_train,y_train, filename, weaklabel, epochs):
     # 创建两个DataFrame分别包含x_train和y_train
     df_x_train = pd.DataFrame(x_train)
     df_y_train = pd.DataFrame(y_train)
@@ -63,7 +63,7 @@ def mergeDataFrameAndSaveToCsv(trainingtype, x_train,y_train, filename, epochs):
     # 保存合并后的DataFrame为CSV文件
     if trainingtype == "GAN":
         generateNewdata.columns = column_names
-        SaveDataToCsvfile(generateNewdata, f"{trainingtype}_data_{filename}", f"{trainingtype}_data_{filename}_epochs_{epochs}")
+        SaveDataToCsvfile(generateNewdata, f"{trainingtype}_data_{filename}", f"{trainingtype}_data_generate_weaklabel_{weaklabel}_epochs_{epochs}")
     else:
         SaveDataToCsvfile(generateNewdata, f"{filename}_epochs_{epochs}")
 
@@ -104,10 +104,10 @@ def ParseCommandLineArgs(commands):
         return args.epochs
 
 # 测试不同的命令
-print(ParseCommandLineArgs(['dataset']))
-print(ParseCommandLineArgs(['epochs']))
-print(ParseCommandLineArgs(['dataset', 'epochs']))
-print(ParseCommandLineArgs(['dataset', 'epochs', 'label']))
+# print(ParseCommandLineArgs(['dataset']))
+# print(ParseCommandLineArgs(['epochs']))
+# print(ParseCommandLineArgs(['dataset', 'epochs']))
+# print(ParseCommandLineArgs(['dataset', 'epochs', 'label']))
 
 def ChooseTrainDatastes(filepath, my_command):
     # 加载选择的数据集
@@ -136,3 +136,66 @@ def ChooseTestDataSet(filepath):
     y_test = np.array(test_dataframe.iloc[:, -1])
     
     return x_test, y_test
+
+### sava dataframe to np array 
+def SaveDataframeTonpArray(dataframe, traindf, filename):
+    #選擇了最后一列Lable之外的所有列，即選擇所有feature
+    x = np.array(dataframe.iloc[:,:-1])
+    y = np.array(dataframe.iloc[:,-1])
+
+    #np.save
+    np.save(f"x_{traindf}_{filename}.npy", x)
+    np.save(f"y_{traindf}_{filename}.npy", y)
+
+### Choose Load np array
+def ChooseLoadNpArray(filepath, file):
+    if file == 'train_half1':
+        # x_train = np.load(filepath + "x_train_half1.npy", allow_pickle=True)
+        # y_train = np.load(filepath + "y_train_half1.npy", allow_pickle=True)
+        x_train = np.load(filepath + f"x_{file}_weakpoint_8.npy", allow_pickle=True)
+        y_train = np.load(filepath + f"y_{file}_weakpoint_8.npy", allow_pickle=True)
+        client_str = "client1"
+        print("使用 train_half1 進行訓練")
+    elif file == 'train_half2':
+        x_train = np.load(filepath + f"x_{file}.npy", allow_pickle=True)
+        y_train = np.load(filepath + f"y_{file}.npy", allow_pickle=True)
+        client_str = "client2"
+        print("使用 train_half2 進行訓練")
+
+    print("use file", file)
+    return x_train, y_train,client_str
+
+
+
+### 將結合weakLabel Label8 的train_half1轉成np array
+gan_dataframe = pd.read_csv("D:\\Labtest20230911\\GAN_data_train_half1\\GAN_data_train_half1_ADD_weakLabel_8.csv")
+SaveDataframeTonpArray(gan_dataframe, "train_half1","weakpoint_8")
+
+
+# # 命令行參數解析器
+# parser = argparse.ArgumentParser(description='Federated Learning Client')
+
+# # 添加一個參數來選擇數據集
+# parser.add_argument('--dataset', type=str, choices=['train_half1', 'train_half2'], default='train_half1',
+#                     help='選擇訓練數據集 (train_half1 或 train_half2)')
+
+# args = parser.parse_args()
+
+# # 根據命令行參數選擇數據集
+# my_command = args.dataset
+# # python BaseLine.py --dataset train_half1
+# # python BaseLine.py --dataset train_half2
+
+# # 載入選擇的數據集
+# if my_command == 'train_half1':
+#     # x_train = np.load(filepath + "x_train_half1.npy", allow_pickle=True)
+#     # y_train = np.load(filepath + "y_train_half1.npy", allow_pickle=True)
+#     x_train = np.load(filepath + "x_train_half1_weakpoint_8.npy", allow_pickle=True)
+#     y_train = np.load(filepath + "y_train_half1_weakpoint_8.npy", allow_pickle=True)
+#     client_str = "client1"
+#     print("使用 train_half1 進行訓練")
+# elif my_command == 'train_half2':
+#     x_train = np.load(filepath + "x_train_half2.npy", allow_pickle=True)
+#     y_train = np.load(filepath + "y_train_half2.npy", allow_pickle=True)
+#     client_str = "client2"
+#     print("使用 train_half2 進行訓練")
