@@ -36,18 +36,19 @@ parser = argparse.ArgumentParser(description='Federated Learning Client')
 parser.add_argument('--dataset', type=str, choices=['train_half1', 'train_half2'], default='train_half1',
                     help='Choose the dataset for training (train_half1 or train_half2)')
 
-parser.add_argument('maxEpochforIDS', type=int, help='Maximum number of epochs for IDS')
+# parser.add_argument('maxEpochforIDS', type=int, help='Maximum number of epochs for IDS')
 
 args = parser.parse_args()
 
 # 根据命令行参数选择数据集
 my_command = args.dataset
-maxEpochforIDS = args.maxEpochforIDS
-try:
-    maxEpochforIDS = int(maxEpochforIDS)
-    print("maxEpochforIDS:", maxEpochforIDS)
-except:
-    maxEpochforIDS
+maxEpochforIDS = 50
+# maxEpochforIDS = args.maxEpochforIDS
+# try:
+#     maxEpochforIDS = int(maxEpochforIDS)
+#     print("maxEpochforIDS:", maxEpochforIDS)
+# except:
+#     maxEpochforIDS
 # python client.py --dataset train_half1
 # python client.py --dataset train_half2
 
@@ -110,7 +111,7 @@ def train(net, trainloader, epochs):
     print("train")
     criterion = nn.CrossEntropyLoss()
     # optimizer = torch.optim.SGD(net.parameters(), lr=0.01)
-    optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, net.parameters()), lr=0.01)
+    optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, net.parameters()), lr=0.0001)
 
     for _ in range(epochs):
         for images, labels in tqdm(trainloader):
