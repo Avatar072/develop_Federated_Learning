@@ -37,15 +37,13 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 # python DoGAN.py --dataset train_half1
 file, num_epochs, weakLabel= ParseCommandLineArgs(["dataset", "epochs","weaklabel"])
 print(f"Dataset: {file}")
-
-# args1 = ParseCommandLineArgs("epochs")
 # num_epochs = 1
 print(f"Number of epochs: {num_epochs}")
 print(f"weakLabel code: {weakLabel}")
-weakpoint = weakLabel
+# weakpoint = weakLabel
 
 
-# 调用 load_selected_dataset 函数，它将返回 x_train、y_train 和 client_str
+# call ChooseTrainDatastes function，返回 x_train、y_train 和 client_str
 x_train, y_train, client_str = ChooseTrainDatastes(filepath, file)
 print(client_str)
 
@@ -226,14 +224,14 @@ y_g=np.zeros(y_train.shape)
 print("x_g",len(x_g))
 print("y_g",len(y_g))
 # 找到值為8的標籤的索引
-indices_8 = [index for index, value in enumerate(y_train) if value == weakpoint]
-print(f"值为{weakpoint}的标签的索引: {indices_8}")
+indices = [index for index, value in enumerate(y_train) if value == weakLabel]
+print(f"值为{weakLabel}的标签的索引: {indices}")
 # 將值為8的標籤標記為“真實”或“正類別”
-y_g[indices_8==weakpoint] = 1 #y_g[y_partial==weakpoint]=1 #等於1表示標記為“真實”或“正類別”特定類別（在這裡是 類別）標記為1，而其他類別標記為0
+y_g[indices==weakLabel] = 1 #y_g[y_partial==weakpoint]=1 #等於1表示標記為“真實”或“正類別”特定類別（在這裡是 類別）標記為1，而其他類別標記為0
 
 
 # 將其他標籤標記為0
-y_g[~np.isin(np.arange(len(y_g)), indices_8)] = 0
+y_g[~np.isin(np.arange(len(y_g)), indices)] = 0
 
 
 data = [(x, y) for x, y in zip(x_g,y_g)]
@@ -345,24 +343,20 @@ for epoch in range(num_epochs):
 x_syn=(generator(noise(numOfSamples))).detach().to(device).cpu().numpy() 
 # 將y_syn設定為一個具有相同形狀的numOfSamples的數組，並將每個元素設為weakpoint。這裡，weakpoint是生成假數據的標籤
 # numOfSamples是50，並將它們的標籤都設置為weakpoint，即8。因此，生成標籤都是8的50個假樣本
-y_syn=np.ones(numOfSamples)*weakpoint #這是與 x_syn 相關的標籤（labels）。在這裡，所有這些假數據的標籤都被設置為 weakpoint
+y_syn=np.ones(numOfSamples)*weakLabel #這是與 x_syn 相關的標籤（labels）。在這裡，所有這些假數據的標籤都被設置為 weakpoint
 
 #保存透過GAN生出來的資料
-mergeDataFrameAndSaveToCsv("GAN", x_syn, y_syn, file, num_epochs)
-
-
-
-
-print("透過GAN生成出來的資料Shapes: ")#顯示 (資料筆數, 特徵數)。
-print(x_syn.shape,y_syn.shape)#顯示 (資料筆數,)，因為這是一維的標籤數組
-print("Number of samples generated in current batch:", numOfSamples)
+mergeDataFrameAndSaveToCsv("GAN", x_syn, y_syn, file, weakLabel, num_epochs)
+# print("透過GAN生成出來的資料Shapes: ")#顯示 (資料筆數, 特徵數)。
+# print(x_syn.shape,y_syn.shape)#顯示 (資料筆數,)，因為這是一維的標籤數組
+# print("Number of samples generated in current batch:", numOfSamples)
 #************************************************
-newdata = pd.read_csv(filepath + f"GAN_data_train_half1\\GAN_data_{file}_epochs_{num_epochs}.csv")
+newdata = pd.read_csv(filepath + f"GAN_data_train_half1\\GAN_data_generate_weaklabel_{weakLabel}_epochs_{num_epochs}.csv")
 # newdata = newdata.iloc[1:]
 train_dataframe = pd.read_csv(os.path.join(filepath, 'data', 'train_df_half1.csv'))
 #第一列名稱要一樣append時才部會往外跑
 train_dataframe = train_dataframe.append(newdata)
-train_dataframe.to_csv(filepath+ f"GAN_data_train_half1\\GAN_data_weakpoint_{weakpoint}.csv", index=False)
+train_dataframe.to_csv(filepath+ f"GAN_data_train_half1\\GAN_data_{file}_ADD_weakLabel_{weakLabel}.csv", index=False)
 
 
 
