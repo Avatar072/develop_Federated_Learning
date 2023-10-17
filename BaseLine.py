@@ -13,7 +13,7 @@ import warnings
 warnings.filterwarnings("ignore")#https://blog.csdn.net/qq_43391414/article/details/120543028
 from torch.utils.data import DataLoader, TensorDataset
 from tqdm import tqdm
-
+from mytoolfunction import SaveDataToCsvfile, generatefolder, mergeDataFrameAndSaveToCsv, ChooseLoadNpArray,ChooseTrainDatastes, ParseCommandLineArgs
 ####################################################################################################
 filepath = "D:\\Labtest20230911\\"
 start_IDS = time.time()
@@ -21,31 +21,16 @@ DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print(torch.cuda.is_available())
 print(torch.__version__)
 
-# 命令行參數解析器
-parser = argparse.ArgumentParser(description='Federated Learning Client')
+# python BaseLine.py --dataset train_half1 --epochs 100
+# python BaseLine.py --dataset train_half2 --epochs 100
+# python DoGAN.py --dataset train_half1
+file, num_epochs = ParseCommandLineArgs(["dataset", "epochs"])
+print(f"Dataset: {file}")
+print(f"Number of epochs: {num_epochs}")
 
-# 添加一個參數來選擇數據集
-parser.add_argument('--dataset', type=str, choices=['train_half1', 'train_half2'], default='train_half1',
-                    help='選擇訓練數據集 (train_half1 或 train_half2)')
-
-args = parser.parse_args()
-
-# 根據命令行參數選擇數據集
-my_command = args.dataset
-# python BaseLine.py --dataset train_half1
-# python BaseLine.py --dataset train_half2
-
-# 載入選擇的數據集
-if my_command == 'train_half1':
-    x_train = np.load(filepath + "x_train_half1.npy", allow_pickle=True)
-    y_train = np.load(filepath + "y_train_half1.npy", allow_pickle=True)
-    client_str = "client1"
-    print("使用 train_half1 進行訓練")
-elif my_command == 'train_half2':
-    x_train = np.load(filepath + "x_train_half2.npy", allow_pickle=True)
-    y_train = np.load(filepath + "y_train_half2.npy", allow_pickle=True)
-    client_str = "client2"
-    print("使用 train_half2 進行訓練")
+# ChooseLoadNpArray function  return x_train、y_train 和 client_str
+x_train, y_train, client_str = ChooseLoadNpArray(filepath, file)
+print(client_str)
 
 x_test = np.load(filepath + "x_test.npy", allow_pickle=True)
 y_test = np.load(filepath + "y_test.npy", allow_pickle=True)
@@ -173,7 +158,7 @@ testloader = DataLoader(test_data, batch_size=len(test_data), shuffle=False)
 net = Net().to(DEVICE)
 
 # 訓練模型
-train(net, trainloader, epochs=500)
+train(net, trainloader, epochs=num_epochs)
 
 # 評估模型
 test_accuracy = test(net, testloader, start_IDS, client_str)
