@@ -2,11 +2,30 @@ import os
 import pandas as pd
 import numpy as np
 import argparse
-
+import time
+from datetime import datetime
 
 ### 生成列名列表
 column_names = ["principal_Component" + str(i) for i in range(1, 79)] + ["Label"]
 
+### 獲取開始or結束時間
+def getStartorEndtime(Start_or_End):
+    timestamp = time.time()# 用於獲取當前時間的時間戳，返回一個浮點數
+
+    # 將時間戳轉換為日期時間物件
+    dt_object = datetime.fromtimestamp(timestamp)
+    
+    # 格式化日期时间為 "yyyy-mm-dd hh:mm:ss"
+    formatted_time = dt_object.strftime("%Y-%m-%d %H:%M:%S")
+
+    print(f"{Start_or_End}_time: {formatted_time}")
+    return timestamp
+### 計算花費時間
+def CalculateTime(end_IDS, start_IDS):
+    #  end_IDS = time.time()
+     execution_time = end_IDS - start_IDS
+     print(f"Code execution time: {execution_time} seconds")
+    
 ### 檢查資料夾是否存在 回傳True表示沒存在
 def CheckFolderExists (folder_name):
     if not os.path.exists(folder_name):
@@ -152,8 +171,12 @@ def ChooseLoadNpArray(filepath, file):
     if file == 'train_half1':
         # x_train = np.load(filepath + "x_train_half1.npy", allow_pickle=True)
         # y_train = np.load(filepath + "y_train_half1.npy", allow_pickle=True)
-        x_train = np.load(filepath + f"x_{file}_weakpoint_8.npy", allow_pickle=True)
-        y_train = np.load(filepath + f"y_{file}_weakpoint_8.npy", allow_pickle=True)
+        # x_train = np.load(filepath + f"x_{file}_weakpoint_8.npy", allow_pickle=True)
+        # y_train = np.load(filepath + f"y_{file}_weakpoint_8.npy", allow_pickle=True)
+        x_train = np.load(filepath + f"x_{file}_weakpoint_9.npy", allow_pickle=True)
+        y_train = np.load(filepath + f"y_{file}_weakpoint_9.npy", allow_pickle=True)
+        # x_train = np.load(filepath + f"x_{file}_weakpoint_13.npy", allow_pickle=True)
+        # y_train = np.load(filepath + f"y_{file}_weakpoint_13.npy", allow_pickle=True)
         client_str = "client1"
         print("使用 train_half1 進行訓練")
     elif file == 'train_half2':
@@ -168,10 +191,15 @@ def ChooseLoadNpArray(filepath, file):
 
 
 ### 將結合weakLabel Label8 的train_half1轉成np array
-gan_dataframe = pd.read_csv("D:\\Labtest20230911\\GAN_data_train_half1\\GAN_data_train_half1_ADD_weakLabel_8.csv")
-SaveDataframeTonpArray(gan_dataframe, "train_half1","weakpoint_8")
+# gan_dataframe = pd.read_csv("D:\\Labtest20230911\\GAN_data_train_half1\\GAN_data_train_half1_ADD_weakLabel_8.csv")
+# SaveDataframeTonpArray(gan_dataframe, "train_half1","weakpoint_8")
+# gan_dataframe = pd.read_csv("D:\\Labtest20230911\\GAN_data_train_half1\\20231017_BK\\GAN_data_weakpoint_14.csv")
+# gan_dataframe = pd.read_csv("D:\\Labtest20230911\\GAN_data_train_half1\\GAN_data_train_half1_ADD_weakLabel_9.csv")
+# SaveDataframeTonpArray(gan_dataframe, "train_half1","weakpoint_9")
 
 
+
+############################################################# other
 # # 命令行參數解析器
 # parser = argparse.ArgumentParser(description='Federated Learning Client')
 
@@ -199,3 +227,10 @@ SaveDataframeTonpArray(gan_dataframe, "train_half1","weakpoint_8")
 #     y_train = np.load(filepath + "y_train_half2.npy", allow_pickle=True)
 #     client_str = "client2"
 #     print("使用 train_half2 進行訓練")
+
+# test time function
+start_IDS = getStartorEndtime("start")
+# 暫停程式執行 5 秒
+time.sleep(10) #sleep 以秒為單位
+end_IDS = getStartorEndtime("end")
+CalculateTime(end_IDS, start_IDS)
