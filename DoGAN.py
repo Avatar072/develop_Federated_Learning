@@ -26,9 +26,9 @@ import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
 # 引用 datasetsPreprocess.py 中的函數
 from mytoolfunction import SaveDataToCsvfile, generatefolder, mergeDataFrameAndSaveToCsv, ChooseTrainDatastes, ParseCommandLineArgs
+from mytoolfunction import getStartorEndtime, CalculateTime
 
 filepath = "D:\\Labtest20230911\\"
-start_IDS = time.time()
 # 檢查是否有可用的GPU
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -148,6 +148,7 @@ class DiscriminatorNet(torch.nn.Module):
 
 #### model generation for generator
 class GeneratorNet(torch.nn.Module):
+    ### 增加一層
     """
     A three hidden-layer generative neural network
     """
@@ -158,24 +159,32 @@ class GeneratorNet(torch.nn.Module):
         
         self.hidden0 = nn.Sequential(
             nn.Linear(n_noise, 512),
-            nn.Tanh()
+            # nn.Tanh()
+            nn.ReLU() #改用ReLU激活函數試
         )
         
         self.hidden1 = nn.Sequential(            
             nn.Linear(512, 512),
-            nn.Tanh()
+            # nn.Tanh()
+            nn.ReLU() #改用ReLU激活函數試
         )
         
+        self.hidden2 = nn.Sequential(            
+            nn.Linear(512, 512),
+            # nn.Tanh()
+            nn.ReLU() #改用ReLU激活函數試
+        )
         self.out = nn.Sequential(
             nn.Linear(512, n_out),
-            nn.Tanh()
+            # nn.Tanh()
+            nn.ReLU() #改用ReLU激活函數試
         )
 
     def forward(self, x):
         x = self.hidden0(x)#實際層數要看這一層
         x = self.hidden1(x)
         
-        #x = self.hidden2(x)
+        x = self.hidden2(x)
         #print("Generator", x)
         
         x = self.out(x)
@@ -326,7 +335,8 @@ discriminator = DiscriminatorNet().to(device)
 generator = GeneratorNet().to(device)
 
 ###########################################################
-d_optimizer = optim.Adam(discriminator.parameters(), lr=0.0002)
+# d_optimizer = optim.Adam(discriminator.parameters(), lr=0.0002)
+d_optimizer = optim.SGD(discriminator.parameters(), lr=0.0002) #改用SGD
 g_optimizer = optim.Adam(generator.parameters(), lr=0.0002)
 
 # nn.BCELoss() 是二元交叉熵损失函数（Binary Cross-Entropy Loss）
@@ -343,6 +353,7 @@ num_test_samples = 20
 d_errs=[]
 g_errs=[]
 
+startimeStamp, starttime= getStartorEndtime("start")
 print("data_loader",len(data_loader))
 for epoch in range(num_epochs):
     print("epoch: ",epoch)
@@ -448,6 +459,7 @@ train_dataframe = pd.read_csv(os.path.join(filepath, 'data', 'train_df_half1.csv
 train_dataframe = train_dataframe.append(newdata)
 train_dataframe.to_csv(filepath+ f"GAN_data_train_half1\\GAN_data_{file}_ADD_weakLabel_{weakLabel}.csv", index=False)
 
+endtimeStamp,endtime = getStartorEndtime("end")
 
 # 绘制鉴别器和生成器损失曲线
 # np.arange參數解釋：
@@ -456,20 +468,29 @@ train_dataframe.to_csv(filepath+ f"GAN_data_train_half1\\GAN_data_{file}_ADD_wea
 # step（可選）：表示數列的步進值，即相鄰兩個數之間的差。 預設為1。
 # dtype（可選）：生成數位的數據類型。
 # np.arange 創建一個從 start 到 stop 的數列，步進值為 step。 這個函數通常用於生成一組整數或浮點數，供迴圈或數據處理使用。
-
 # 例如，np.arange（0， 10， 2） 將生成一個包含 [0， 2， 4， 6， 8] 的NumPy陣列。 在你的代碼中，test_range 是一個包含從0到 len（d_errs） - 1 的整數的NumPy陣列，用於表示Epochs。
 test_range = np.arange(len(d_errs))
 print(test_range)
+# 繪製兩個損失曲線
 plt.figure(figsize=(10, 5))
 plt.plot(test_range, d_errs, label="Discriminator Loss", color='blue')
 plt.plot(test_range, g_errs, label="Generator Loss", color='green')
+# 設置標籤、標題、圖例、網格等
 plt.xlabel("Epochs")
 plt.ylabel("Loss")
-plt.title("Discriminator and Generator Loss Over Time")
+# 添加標題，並在標題和文本之間添加空行
+title_text = f"Label_{weakLabel}_Discriminator and Generator Loss Over Epochs\nStartTime:{starttime} EndTime:{endtime}"
+plt.title(title_text)
+# plt.title(f"Label_{weakLabel}_Discriminator and Generator Loss Over Time")
 plt.legend()
 plt.grid(True)
+# 儲存圖片並顯示
+plt.savefig(f"./GAN_data_train_half1/epochs_{num_epochs}_weaklabel_{weakLabel}_Loss.png")
 plt.show()
 
+CalculateTime(endtimeStamp, startimeStamp)
+print("start time",starttime)
+print("end time",endtime)
 # x_train=np.concatenate((x_train,x_syn),axis=0)
 # y_train=np.concatenate((y_train,y_syn),axis=0)
 

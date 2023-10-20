@@ -19,7 +19,7 @@ def getStartorEndtime(Start_or_End):
     formatted_time = dt_object.strftime("%Y-%m-%d %H:%M:%S")
 
     print(f"{Start_or_End}_time: {formatted_time}")
-    return timestamp
+    return timestamp, formatted_time
 ### 計算花費時間
 def CalculateTime(end_IDS, start_IDS):
     #  end_IDS = time.time()
@@ -229,8 +229,8 @@ def ChooseLoadNpArray(filepath, file):
 #     print("使用 train_half2 進行訓練")
 
 # test time function
-start_IDS = getStartorEndtime("start")
-# 暫停程式執行 5 秒
-time.sleep(10) #sleep 以秒為單位
-end_IDS = getStartorEndtime("end")
-CalculateTime(end_IDS, start_IDS)
+# start_IDS = getStartorEndtime("start")
+# # 暫停程式執行 5 秒
+# time.sleep(10) #sleep 以秒為單位
+# end_IDS = getStartorEndtime("end")
+# CalculateTime(end_IDS, start_IDS)
