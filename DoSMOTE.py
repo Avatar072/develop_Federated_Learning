@@ -13,7 +13,8 @@ from numpy import where
 from mytoolfunction import  ChooseLoadNpArray, ChooseTrainDatastes, ParseCommandLineArgs
 
 filepath = "D:\\Labtest20230911\\"
-
+desired_sample_count = 1500
+k_neighbors = 1  # 调整k_neighbors的值  label 8要設因為樣本只有2個
 ######################## Choose Dataset ##############################
 # 根據參數選擇dataset
 # python DoSMOTE.py --dataset train_half1
@@ -43,11 +44,40 @@ cmap_original = plt.get_cmap('tab20', lut=len(np.unique(y_train)))
 # plt.show()
 
 ################## DO SMOTE ##################
-desired_sample_count = 1500
+
+### 一次SMOTE所有weaklabel
+def DoALLWeakLabel(x_train,y_train):
+    # 对Label14进行SMOTE
+    sampling_strategy_14 = {14: desired_sample_count}
+    oversample_14 = SMOTE(sampling_strategy=sampling_strategy_14, k_neighbors=3, random_state=42)
+    x_train, y_train = oversample_14.fit_resample(x_train, y_train)
+
+    # 对Label9进行SMOTE
+    sampling_strategy_9 = {9: desired_sample_count}
+    oversample_9 = SMOTE(sampling_strategy=sampling_strategy_9, k_neighbors=3, random_state=42)
+    x_train, y_train = oversample_9.fit_resample(x_train, y_train)
+
+    # 对Label13进行SMOTE
+    sampling_strategy_13 = {13: desired_sample_count}
+    oversample_13 = SMOTE(sampling_strategy=sampling_strategy_13, k_neighbors=3, random_state=42)
+    x_train, y_train = oversample_13.fit_resample(x_train, y_train)
+
+    # 对Label8进行SMOTE
+    sampling_strategy_8 = {8: desired_sample_count}
+    oversample_8 = SMOTE(sampling_strategy=sampling_strategy_8, k_neighbors=1, random_state=42)
+    x_train, y_train = oversample_8.fit_resample(x_train, y_train)
+    print(Counter(y_train))
+    np.save(f"{filepath}\\GAN_data_train_half2\\x_{file}_SMOTE_ALL_weakLabel.npy", x_train)
+    np.save(f"{filepath}\\GAN_data_train_half2\\y_{file}_SMOTE_ALL_weakLabel.npy", y_train)
+
+DoALLWeakLabel(x_train,y_train)
+
+###############################################
+#一次SMOTE只SMOTE一個weaklabel
 sampling_strategy = {weakLabel: desired_sample_count}   # weakLabel和設置desired_sample_count為希望稱生成的樣本數量
                                                         # SMOTE進行過抽樣時，所請求的樣本數應不小於原始類別中的樣本數。
-k_neighbors = 5  # 调整k_neighbors的值  label 8要設因為樣本只有2個
-# oversample = SMOTE(sampling_strategy=sampling_strategy, k_neighbors=k_neighbors, random_state=42)
+
+oversample = SMOTE(sampling_strategy=sampling_strategy, k_neighbors=k_neighbors, random_state=42)
 # 參數說明：
 # ratio：用於指定重抽樣的比例，如果指定字元型的值，可以是'minority'，表示對少數類別的樣本進行抽樣、'majority'，表示對多數類別的樣本進行抽樣、
 # 'not minority'表示採用欠採樣方法、'all'表示採用過採樣方法，
