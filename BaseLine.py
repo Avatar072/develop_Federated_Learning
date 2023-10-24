@@ -165,9 +165,10 @@ def draw_confusion_matrix(y_true, y_pred, plot_confusion_matrix = False):
         df_cm = pd.DataFrame(arr, class_names, class_names)
         plt.figure(figsize = (9,6))
         sns.heatmap(df_cm, annot=True, fmt="d", cmap='BuGn')
+        plt.title(client_str)
         plt.xlabel("prediction")
         plt.ylabel("label (ground truth)")
-        plt.savefig(f"./GAN_data_train_half1/epochs_{num_epochs}_weaklabel_{weakLabel}_Loss.png")
+        plt.savefig(f"./{client_str}_epochs_{num_epochs}_confusion_matrix.png")
         plt.show()
 
 # 創建用於訓練和測試的數據加載器
