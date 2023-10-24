@@ -343,7 +343,7 @@ g_optimizer = optim.Adam(generator.parameters(), lr=0.0002)
 # 通常用於二元分類問題
 # 使用 nn. BCELoss（）時，通常需要將模型的輸出視為概率值，並將真實標籤表示為0或1。
 # 然後，損失函數將計算模型的輸出與真實標籤之間的二進位交叉熵損失
-loss = nn.BCELoss()
+loss = nn.BCELoss().cuda()  # loss function使用cuda
 ###########################################################
 num_test_samples = 20
 #*********************************************  Running GAN   ***************************
@@ -482,7 +482,7 @@ plt.ylabel("Loss")
 title_text = f"Label_{weakLabel}_Discriminator and Generator Loss Over Epochs\nStartTime:{starttime} EndTime:{endtime}"
 plt.title(title_text)
 # plt.title(f"Label_{weakLabel}_Discriminator and Generator Loss Over Time")
-plt.legend()
+plt.legend() #作用是將圖例添加到當前的繪圖中
 plt.grid(True)
 # 儲存圖片並顯示
 plt.savefig(f"./GAN_data_train_half1/epochs_{num_epochs}_weaklabel_{weakLabel}_Loss.png")
