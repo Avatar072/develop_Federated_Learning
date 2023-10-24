@@ -1,4 +1,6 @@
 import warnings
+import seaborn as sns
+import matplotlib.pyplot as plt
 import os
 import time
 import argparse
@@ -8,13 +10,13 @@ from sklearn.metrics import classification_report
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import warnings
-import warnings
 warnings.filterwarnings("ignore")#https://blog.csdn.net/qq_43391414/article/details/120543028
 from torch.utils.data import DataLoader, TensorDataset
 from tqdm import tqdm
+from sklearn.metrics import confusion_matrix
 from mytoolfunction import SaveDataToCsvfile, generatefolder, mergeDataFrameAndSaveToCsv, ChooseLoadNpArray,ChooseTrainDatastes, ParseCommandLineArgs
 ####################################################################################################
+
 filepath = "D:\\Labtest20230911\\"
 start_IDS = time.time()
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -80,11 +82,11 @@ def train(net, trainloader, epochs):
             loss.backward()
             optimizer.step()
         ###訓練的過程    
-        test_accuracy = test(net, testloader, start_IDS, client_str)
+        test_accuracy = test(net, testloader, start_IDS, client_str,False)
         print(f"訓練週期 [{epoch+1}/{epochs}] - 測試準確度: {test_accuracy:.4f}")
 
 # 定義測試函數
-def test(net, testloader, start_time, client_str):
+def test(net, testloader, start_time, client_str,plot_confusion_matrix):
     # print("測試中")
     criterion = nn.CrossEntropyLoss()
     correct = 0
@@ -143,10 +145,30 @@ def test(net, testloader, start_time, client_str):
                 # 生成分類報告
                 GenrateReport = classification_report(y_true, y_pred, digits=4, output_dict=True)
                 report_df = pd.DataFrame(GenrateReport).transpose()
-                report_df.to_csv(f"./single_AnalyseReportFolder/baseline_report_{client_str}.csv",header=True)    
+                report_df.to_csv(f"./single_AnalyseReportFolder/baseline_report_{client_str}.csv",header=True)
+
+    draw_confusion_matrix(y_true, y_pred,plot_confusion_matrix)
     accuracy = correct / total
     print(f"測試準確度: {accuracy:.4f}")
     return accuracy
+
+# 畫混淆矩陣
+def draw_confusion_matrix(y_true, y_pred, plot_confusion_matrix = False):
+    #混淆矩陣
+    if plot_confusion_matrix:
+        # df_cm的PD.DataFrame 接受三個參數：
+        # arr：混淆矩陣的數據，這是一個二維陣列，其中包含了模型的預測和實際標籤之間的關係，以及它們在混淆矩陣中的計數。
+        # class_names：類別標籤的清單，通常是一個包含每個類別名稱的字串清單。這將用作 Pandas 資料幀的行索引和列索引，以標識混淆矩陣中每個類別的位置。
+        # class_names：同樣的類別標籤的清單，它作為列索引的標籤，這是可選的，如果不提供這個參數，將使用行索引的標籤作為列索引
+        arr = confusion_matrix(y_true, y_pred)
+        class_names = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14']
+        df_cm = pd.DataFrame(arr, class_names, class_names)
+        plt.figure(figsize = (9,6))
+        sns.heatmap(df_cm, annot=True, fmt="d", cmap='BuGn')
+        plt.xlabel("prediction")
+        plt.ylabel("label (ground truth)")
+        plt.savefig(f"./GAN_data_train_half1/epochs_{num_epochs}_weaklabel_{weakLabel}_Loss.png")
+        plt.show()
 
 # 創建用於訓練和測試的數據加載器
 train_data = TensorDataset(x_train, y_train)
@@ -161,7 +183,7 @@ net = Net().to(DEVICE)
 train(net, trainloader, epochs=num_epochs)
 
 # 評估模型
-test_accuracy = test(net, testloader, start_IDS, client_str)
+test_accuracy = test(net, testloader, start_IDS, client_str,True)
 print("測試數據量:\n", len(test_data))
 print("訓練數據量:\n", len(train_data))
 print(f"最終測試準確度: {test_accuracy:.4f}")
