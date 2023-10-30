@@ -157,45 +157,92 @@ def ChooseTestDataSet(filepath):
     return x_test, y_test
 
 ### sava dataframe to np array 
-def SaveDataframeTonpArray(dataframe, traindf, filename):
+def SaveDataframeTonpArray(dataframe, traindf_name, filename):
     #選擇了最后一列Lable之外的所有列，即選擇所有feature
     x = np.array(dataframe.iloc[:,:-1])
     y = np.array(dataframe.iloc[:,-1])
 
     #np.save
-    np.save(f"x_{traindf}_{filename}.npy", x)
-    np.save(f"y_{traindf}_{filename}.npy", y)
+    np.save(f"x_{traindf_name}_{filename}.npy", x)
+    np.save(f"y_{traindf_name}_{filename}.npy", y)
 
 ### Choose Load np array
 def ChooseLoadNpArray(filepath, file):
     if file == 'train_half1':
         # x_train = np.load(filepath + "x_train_half1.npy", allow_pickle=True)
         # y_train = np.load(filepath + "y_train_half1.npy", allow_pickle=True)
-        # x_train = np.load(filepath + f"x_{file}_weakpoint_8.npy", allow_pickle=True)
-        # y_train = np.load(filepath + f"y_{file}_weakpoint_8.npy", allow_pickle=True)
-        x_train = np.load(filepath + f"x_{file}_weakpoint_9.npy", allow_pickle=True)
-        y_train = np.load(filepath + f"y_{file}_weakpoint_9.npy", allow_pickle=True)
+        x_train = np.load(filepath + "x_train_half1_respilt.npy", allow_pickle=True)
+        y_train = np.load(filepath + "y_train_half1_respilt.npy", allow_pickle=True)
+        # x_train = np.load(filepath + f"x_{file}_weakpoint_14.npy", allow_pickle=True)
+        # y_train = np.load(filepath + f"y_{file}_weakpoint_14.npy", allow_pickle=True)
+        # x_train = np.load(filepath + f"x_{file}_weakpoint_9.npy", allow_pickle=True)
+        # y_train = np.load(filepath + f"y_{file}_weakpoint_9.npy", allow_pickle=True)
         # x_train = np.load(filepath + f"x_{file}_weakpoint_13.npy", allow_pickle=True)
         # y_train = np.load(filepath + f"y_{file}_weakpoint_13.npy", allow_pickle=True)
         client_str = "client1"
         print("使用 train_half1 進行訓練")
     elif file == 'train_half2':
-        x_train = np.load(filepath + f"x_{file}.npy", allow_pickle=True)
-        y_train = np.load(filepath + f"y_{file}.npy", allow_pickle=True)
+        x_train = np.load(filepath + "x_train_half2_respilt.npy", allow_pickle=True)
+        y_train = np.load(filepath + "y_train_half2_respilt.npy", allow_pickle=True)
+        # x_train = np.load(filepath + f"x_{file}.npy", allow_pickle=True)
+        # y_train = np.load(filepath + f"y_{file}.npy", allow_pickle=True)
+        # x_train = np.load(filepath + f"x_{file}_SMOTE_8.npy", allow_pickle=True)
+        # y_train = np.load(filepath + f"y_{file}_SMOTE_8.npy", allow_pickle=True)
+        # x_train = np.load(filepath + f"x_{file}_SMOTE_13.npy", allow_pickle=True)
+        # y_train = np.load(filepath + f"y_{file}_SMOTE_13.npy", allow_pickle=True)
+        # x_train = np.load(filepath + f"x_{file}_SMOTE_14.npy", allow_pickle=True)
+        # y_train = np.load(filepath + f"y_{file}_SMOTE_14.npy", allow_pickle=True)
+        # x_train = np.load(filepath + f"x_{file}_SMOTE_ALL_weakLabel.npy", allow_pickle=True)
+        # y_train = np.load(filepath + f"y_{file}_SMOTE_ALL_weakLabel.npy", allow_pickle=True)
         client_str = "client2"
+        # print(filepath + f"x_{file}_SMOTE_weakLabel.npy")
+        # print(filepath + f"y_{file}_SMOTE_weakLabel.npy")
         print("使用 train_half2 進行訓練")
 
     print("use file", file)
     return x_train, y_train,client_str
 
+### find找到datasets中是string的行
+def findStringCloumn(dataFrame):
+        string_columns = dataFrame.select_dtypes(include=['object'])
+        for column in string_columns.columns:
+            print(f"{dataFrame} 中type為 'object' 的列: {column}")
+            print(string_columns[column].value_counts())
+            print("\n")
 
+### check train_df_half1 and train_df_half2 dont have duplicate data
+def CheckDuplicate(dataFrame1, dataFrame2):
+    intersection = len(set(dataFrame1.index) & set(dataFrame2.index))
+    print(f"{dataFrame1} 和 {dataFrame2} 的index交集数量:", intersection)
+    print(f"{dataFrame1} 和 {dataFrame2}是否相同:", dataFrame1.equals(dataFrame2))
+    
+### print information 
+def printFeatureCountAndLabelCountInfo(dataFrame1, dataFrame2):
+     # 計算feature數量
+    num_features_dataFrame1 = dataFrame1.shape[1] - 1
+    num_features_dataFrame2 = dataFrame2.shape[1] - 1 
+     # 計算Label數量
+    label_counts = dataFrame1['Label'].value_counts()
+    label_counts2 = dataFrame2['Label'].value_counts()
 
-### 將結合weakLabel Label8 的train_half1轉成np array
+    print(f"{str(dataFrame1)} 的feature:", num_features_dataFrame1)
+    print(f"{str(dataFrame1)} 的label數:", len(label_counts))
+    print(f"{str(dataFrame1)} 的除了最後一列Label列之外的所有列,即選擇feature數:\n", dataFrame1.iloc[:,:-1])
+    findStringCloumn(dataFrame1)
+
+    print(f"{str(dataFrame2)} 的feature:", num_features_dataFrame2)
+    print(f"{str(dataFrame2)} 的label數:", len(label_counts2))
+    print(f"{str(dataFrame2)} 的除了最後一列Label列之外的所有列,即選擇feature數:\n", dataFrame2.iloc[:,:-1])
+    findStringCloumn(dataFrame2)
+
+    CheckDuplicate(dataFrame1, dataFrame2)
+
+## 將結合weakLabel Label8 的train_half1轉成np array
 # gan_dataframe = pd.read_csv("D:\\Labtest20230911\\GAN_data_train_half1\\GAN_data_train_half1_ADD_weakLabel_8.csv")
 # SaveDataframeTonpArray(gan_dataframe, "train_half1","weakpoint_8")
 # gan_dataframe = pd.read_csv("D:\\Labtest20230911\\GAN_data_train_half1\\20231017_BK\\GAN_data_weakpoint_14.csv")
-# gan_dataframe = pd.read_csv("D:\\Labtest20230911\\GAN_data_train_half1\\GAN_data_train_half1_ADD_weakLabel_9.csv")
-# SaveDataframeTonpArray(gan_dataframe, "train_half1","weakpoint_9")
+# # gan_dataframe = pd.read_csv("D:\\Labtest20230911\\GAN_data_train_half1\\GAN_data_train_half1_ADD_weakLabel_9.csv")
+# SaveDataframeTonpArray(gan_dataframe, "train_half1","weakpoint_14")
 
 
 
@@ -234,3 +281,40 @@ def ChooseLoadNpArray(filepath, file):
 # time.sleep(10) #sleep 以秒為單位
 # end_IDS = getStartorEndtime("end")
 # CalculateTime(end_IDS, start_IDS)
+
+
+### 添加图例
+# # 绘制原始数据集
+# plt.scatter(x_train[:, 0], x_train[:, 1], c='red', label='Original Data')
+
+# # 绘制SMOTE采样后的数据集
+# plt.scatter(X_resampled[:, 0], X_resampled[:, 1], c='blue', marker='x', s=100, label='SMOTE Samples')
+
+
+# plt.legend()
+# plt.show()
+
+# 找到SMOTE采样后的数据中Label 13的索引
+
+
+# desired_sample_count = 500
+
+# # 对Label14进行SMOTE
+# sampling_strategy_label14 = {14: desired_sample_count}
+# oversample_label14 = SMOTE(sampling_strategy=sampling_strategy_label14, k_neighbors=k_neighbors, random_state=42)
+# X_resampled_label14, y_resampled_label14 = oversample_label14.fit_resample(x_train, y_train)
+
+# # 对Label9进行SMOTE
+# sampling_strategy_label9 = {9: desired_sample_count}
+# oversample_label9 = SMOTE(sampling_strategy=sampling_strategy_label9, k_neighbors=k_neighbors, random_state=42)
+# X_resampled_label9, y_resampled_label9 = oversample_label9.fit_resample(x_train, y_train)
+
+# # 对Label13进行SMOTE
+# sampling_strategy_label13 = {13: desired_sample_count}
+# oversample_label13 = SMOTE(sampling_strategy=sampling_strategy_label13, k_neighbors=k_neighbors, random_state=42)
+# X_resampled_label13, y_resampled_label13 = oversample_label13.fit_resample(x_train, y_train)
+
+# # 对Label8进行SMOTE
+# sampling_strategy_label8 = {8: desired_sample_count}
+# oversample_label8 = SMOTE(sampling_strategy=sampling_strategy_label8, k_neighbors=k_neighbors, random_state=42)
+# X_resampled_label8, y_resampled_label8 = oversample_label8.fit_resample(x_train, y_train)

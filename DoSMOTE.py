@@ -48,22 +48,22 @@ cmap_original = plt.get_cmap('tab20', lut=len(np.unique(y_train)))
 def DoALLWeakLabel(x_train,y_train):
     # 对Label14进行SMOTE
     sampling_strategy_14 = {14: desired_sample_count}
-    oversample_14 = SMOTE(sampling_strategy=sampling_strategy_14, k_neighbors=5, random_state=42)
+    oversample_14 = SMOTE(sampling_strategy=sampling_strategy_14, random_state=42)
     x_train, y_train = oversample_14.fit_resample(x_train, y_train)
     print("Label 14 SMOTE", Counter(y_train))
     # 对Label9进行SMOTE
     sampling_strategy_9 = {9: desired_sample_count}
-    oversample_9 = SMOTE(sampling_strategy=sampling_strategy_9, k_neighbors=5, random_state=42)
+    oversample_9 = SMOTE(sampling_strategy=sampling_strategy_9, random_state=42)
     x_train, y_train = oversample_9.fit_resample(x_train, y_train)
     print("Label 9 SMOTE", Counter(y_train))
     # 对Label13进行SMOTE
     sampling_strategy_13 = {13: desired_sample_count}
-    oversample_13 = SMOTE(sampling_strategy=sampling_strategy_13, k_neighbors=5, random_state=42)
+    oversample_13 = SMOTE(sampling_strategy=sampling_strategy_13, random_state=42)
     x_train, y_train = oversample_13.fit_resample(x_train, y_train)
     print("Label 13 SMOTE", Counter(y_train))
     # 对Label8进行SMOTE
     sampling_strategy_8 = {8: desired_sample_count}
-    oversample_8 = SMOTE(sampling_strategy=sampling_strategy_8, k_neighbors=1, random_state=42)
+    oversample_8 = SMOTE(sampling_strategy=sampling_strategy_8, random_state=42)
     x_train, y_train = oversample_8.fit_resample(x_train, y_train)
     print("Label 8 SMOTE", Counter(y_train))
     np.save(f"{filepath}\\GAN_data_train_half2\\x_{file}_SMOTE_ALL_weakLabel.npy", x_train)

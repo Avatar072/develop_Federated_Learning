@@ -15,6 +15,7 @@ from torch.utils.data import DataLoader, TensorDataset
 from tqdm import tqdm
 from sklearn.metrics import confusion_matrix
 from mytoolfunction import SaveDataToCsvfile, generatefolder, mergeDataFrameAndSaveToCsv, ChooseLoadNpArray,ChooseTrainDatastes, ParseCommandLineArgs
+from collections import Counter
 ####################################################################################################
 
 filepath = "D:\\Labtest20230911\\"
@@ -32,10 +33,13 @@ print(f"Number of epochs: {num_epochs}")
 
 # ChooseLoadNpArray function  return x_train、y_train 和 client_str
 x_train, y_train, client_str = ChooseLoadNpArray(filepath, file)
+
 print(client_str)
 
-x_test = np.load(filepath + "x_test.npy", allow_pickle=True)
-y_test = np.load(filepath + "y_test.npy", allow_pickle=True)
+# x_test = np.load(filepath + "x_test.npy", allow_pickle=True)
+# y_test = np.load(filepath + "y_test.npy", allow_pickle=True)
+x_test = np.load(filepath + "x_test_respilt.npy", allow_pickle=True)
+y_test = np.load(filepath + "y_test_respilt.npy", allow_pickle=True)
 
 x_train = torch.from_numpy(x_train).type(torch.FloatTensor)
 y_train = torch.from_numpy(y_train).type(torch.LongTensor)
@@ -168,7 +172,7 @@ def draw_confusion_matrix(y_true, y_pred, plot_confusion_matrix = False):
         plt.title(client_str)
         plt.xlabel("prediction")
         plt.ylabel("label (ground truth)")
-        plt.savefig(f"./{client_str}_epochs_{num_epochs}_confusion_matrix.png")
+        plt.savefig(f"./single_AnalyseReportFolder/{client_str}_epochs_{num_epochs}_confusion_matrix.png")
         plt.show()
 
 # 創建用於訓練和測試的數據加載器
@@ -188,3 +192,4 @@ test_accuracy = test(net, testloader, start_IDS, client_str,True)
 print("測試數據量:\n", len(test_data))
 print("訓練數據量:\n", len(train_data))
 print(f"最終測試準確度: {test_accuracy:.4f}")
+# print("Label 14 SMOTE", Counter(y_train))
