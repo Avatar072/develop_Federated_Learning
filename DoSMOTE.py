@@ -1,4 +1,5 @@
 import torch
+import datetime
 import numpy as np
 import matplotlib.pyplot as plt
 import imblearn # Oversample with SMOTE and random undersample for imbalanced dataset
@@ -9,19 +10,23 @@ from collections import Counter
 from sklearn.datasets import make_classification
 from matplotlib import pyplot
 from numpy import where
-from mytoolfunction import  ChooseLoadNpArray, ChooseTrainDatastes, ParseCommandLineArgs
+from mytoolfunction import  ChooseLoadNpArray, ChooseTrainDatastes, ParseCommandLineArgs,generatefolder
 
 filepath = "D:\\Labtest20230911\\"
 desired_sample_count = 1500
-k_neighbors = 1  # 调整k_neighbors的值  label 8要設因為樣本只有2個
+today = datetime.date.today()
+today = today.strftime("%Y%m%d")
+# k_neighbors = 1  # 调整k_neighbors的值  label 8要設因為樣本只有2個
 ######################## Choose Dataset ##############################
 # 根據參數選擇dataset
 # python DoSMOTE.py --dataset train_half1
+# python DoSMOTE.py --dataset total_train
 # python DoSMOTE.py --dataset train_half1 --epochs 10000 --weaklabel 13
 file, num_epochs, weakLabel= ParseCommandLineArgs(["dataset", "epochs","weaklabel"])
 print(f"Dataset: {file}")
 print(f"weakLabel: {weakLabel}")
 x_train, y_train, client_str = ChooseTrainDatastes(filepath, file)
+print(f"client_str: {client_str}")
 # x_train, y_train, client_str = ChooseLoadNpArray(filepath, file)
 #feature and label count
 # print(x_train.shape[1])
@@ -58,18 +63,38 @@ def DoALLWeakLabel(x_train,y_train):
     print("Label 9 SMOTE", Counter(y_train))
     # 对Label13进行SMOTE
     sampling_strategy_13 = {13: desired_sample_count}
-    oversample_13 = SMOTE(sampling_strategy=sampling_strategy_13, random_state=42)
+    oversample_13 = SMOTE(sampling_strategy=sampling_strategy_13,k_neighbors = 4, random_state=42)
     x_train, y_train = oversample_13.fit_resample(x_train, y_train)
     print("Label 13 SMOTE", Counter(y_train))
     # 对Label8进行SMOTE
     sampling_strategy_8 = {8: desired_sample_count}
-    oversample_8 = SMOTE(sampling_strategy=sampling_strategy_8, random_state=42)
+    oversample_8 = SMOTE(sampling_strategy=sampling_strategy_8,k_neighbors = 2, random_state=42)
     x_train, y_train = oversample_8.fit_resample(x_train, y_train)
     print("Label 8 SMOTE", Counter(y_train))
-    np.save(f"{filepath}\\GAN_data_train_half2\\x_{file}_SMOTE_ALL_weakLabel.npy", x_train)
-    np.save(f"{filepath}\\GAN_data_train_half2\\y_{file}_SMOTE_ALL_weakLabel.npy", y_train)
+    # np.save(f"{filepath}\\GAN_data_train_half2\\x_{file}_SMOTE_ALL_weakLabel.npy", x_train)
+    # np.save(f"{filepath}\\GAN_data_train_half2\\y_{file}_SMOTE_ALL_weakLabel.npy", y_train)
+    np.save(f"{filepath}\\GAN_data_train_half1\\x_{file}_SMOTE_ALL_weakLabel.npy", x_train)
+    np.save(f"{filepath}\\GAN_data_train_half1\\y_{file}_SMOTE_ALL_weakLabel.npy", y_train)
 
-DoALLWeakLabel(x_train,y_train)
+def DoALL_Label(x_train,y_train):
+    generatefolder(filepath, "ALL_Label")
+    generatefolder(f'{filepath}' + '\\ALL_Label\\', "SMOTE")
+    generatefolder(f'{filepath}' + '\\ALL_Label\\SMOTE\\', today)
+    # 对ALL　Label进行SMOTE
+    # 打印原始类别分布
+    # counter = Counter(y_train)
+    # print(counter)
+    for i in range(0, 15):# 因為有15個Label
+        print(i)
+        sampling_strategy_ALL = {i: 10000}
+        oversample = SMOTE(sampling_strategy=sampling_strategy_ALL, random_state=42)
+        x_train, y_train = oversample.fit_resample(x_train, y_train)
+        print("ALL Label SMOTE", Counter(y_train))
+    
+    np.save(f"{filepath}\\ALL_Label\\SMOTE\\{today}\\x_{file}_SMOTE_ALL_Label.npy", x_train)
+    np.save(f"{filepath}\\ALL_Label\\SMOTE\\{today}\\y_{file}_SMOTE_ALL_Label.npy", y_train)
+# DoALLWeakLabel(x_train,y_train)
+DoALL_Label(x_train,y_train)
 
 ###############################################
 # #一次SMOTE只SMOTE一個weaklabel

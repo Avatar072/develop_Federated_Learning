@@ -28,21 +28,22 @@ print(torch.__version__)
 # python BaseLine.py --dataset train_half1 --epochs 100
 # python BaseLine.py --dataset train_half2 --epochs 100
 # python DoGAN.py --dataset train_half1
-file, num_epochs = ParseCommandLineArgs(["dataset", "epochs"])
+file, num_epochs,Choose_method = ParseCommandLineArgs(["dataset", "epochs", "method"])
 print(f"Dataset: {file}")
 print(f"Number of epochs: {num_epochs}")
-
-# ChooseLoadNpArray function  return x_train、y_train 和 client_str
-x_train, y_train, client_str = ChooseLoadNpArray(filepath, file)
-
+print(f"Choose_method: {Choose_method}")
+# ChooseLoadNpArray function  return x_train、y_train 和 client_str and Choose_method
+x_train, y_train, client_str = ChooseLoadNpArray(filepath, file, Choose_method)
 print(client_str)
-
+counter = Counter(y_train)
+print(counter)
 today = datetime.date.today()
 today = today.strftime("%Y%m%d")
-print(today)
 # 在single_AnalyseReportFolder產生天日期的資料夾
+generatefolder(filepath, "\\single_AnalyseReportFolder")
 generatefolder(f"./single_AnalyseReportFolder/", today)
 generatefolder(f"./single_AnalyseReportFolder/{today}/", client_str)
+generatefolder(f"./single_AnalyseReportFolder/{today}/{client_str}/", Choose_method)
 
 # x_test = np.load(filepath + "x_test.npy", allow_pickle=True)
 # y_test = np.load(filepath + "y_test.npy", allow_pickle=True)
@@ -140,14 +141,14 @@ def test(net, testloader, start_time, client_str,plot_confusion_matrix):
 
             # 標誌來跟踪是否已經添加了標題行
             header_written = False
-            with open(f"./single_AnalyseReportFolder/{today}/{client_str}/recall-baseline_{client_str}.csv", "a+") as file:
+            with open(f"./single_AnalyseReportFolder/{today}/{client_str}/{Choose_method}/recall-baseline_{client_str}.csv", "a+") as file:
                 if not header_written:
                     # file.write("標籤," + ",".join([str(i) for i in range(labelCount)]) + "\n")
                     header_written = True
                 file.write(str(RecordRecall) + "\n")
         
             # 將總體準確度和其他信息寫入 "accuracy-baseline.csv" 檔案
-            with open(f"./single_AnalyseReportFolder/{today}/{client_str}/accuracy-baseline_{client_str}.csv", "a+") as file:
+            with open(f"./single_AnalyseReportFolder/{today}/{client_str}/{Choose_method}/accuracy-baseline_{client_str}.csv", "a+") as file:
                 if not header_written:
                     # file.write("標籤," + ",".join([str(i) for i in range(labelCount)]) + "\n")
                     header_written = True
@@ -157,7 +158,7 @@ def test(net, testloader, start_time, client_str,plot_confusion_matrix):
                 # 生成分類報告
                 GenrateReport = classification_report(y_true, y_pred, digits=4, output_dict=True)
                 report_df = pd.DataFrame(GenrateReport).transpose()
-                report_df.to_csv(f"./single_AnalyseReportFolder/{today}/{client_str}/baseline_report_{client_str}.csv",header=True)
+                report_df.to_csv(f"./single_AnalyseReportFolder/{today}/{client_str}/{Choose_method}/baseline_report_{client_str}.csv",header=True)
 
     draw_confusion_matrix(y_true, y_pred,plot_confusion_matrix)
     accuracy = correct / total
@@ -177,10 +178,10 @@ def draw_confusion_matrix(y_true, y_pred, plot_confusion_matrix = False):
         df_cm = pd.DataFrame(arr, class_names, class_names)
         plt.figure(figsize = (9,6))
         sns.heatmap(df_cm, annot=True, fmt="d", cmap='BuGn')
-        plt.title(client_str)
+        plt.title(client_str +"_"+ Choose_method)
         plt.xlabel("prediction")
         plt.ylabel("label (ground truth)")
-        plt.savefig(f"./single_AnalyseReportFolder/{today}/{client_str}/{client_str}_epochs_{num_epochs}_confusion_matrix.png")
+        plt.savefig(f"./single_AnalyseReportFolder/{today}/{client_str}/{Choose_method}/{client_str}_epochs_{num_epochs}_confusion_matrix.png")
         plt.show()
 
 # 創建用於訓練和測試的數據加載器
@@ -200,4 +201,3 @@ test_accuracy = test(net, testloader, start_IDS, client_str,True)
 print("測試數據量:\n", len(test_data))
 print("訓練數據量:\n", len(train_data))
 print(f"最終測試準確度: {test_accuracy:.4f}")
-# print("Label 14 SMOTE", Counter(y_train))
