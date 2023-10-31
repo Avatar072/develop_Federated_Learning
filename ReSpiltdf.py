@@ -39,7 +39,7 @@ label_counts = mergecompelete_dataset['Label'].value_counts()
 print(label_counts)
 
 # # split mergecompelete_dataset各一半
-train_dataframes, test_dataframes = train_test_split(mergecompelete_dataset, test_size=0.2, random_state=42)#test_size=0.3表示将数据集分成测试集的比例为30%
+train_dataframes, test_dataframes = train_test_split(mergecompelete_dataset, test_size=0.2, random_state=42)#test_size=0.2表示将数据集分成测试集的比例为20%
 # label_counts = test_dataframes['Label'].value_counts()
 # print("test_dataframes\n",label_counts)
 # label_counts = train_dataframes['Label'].value_counts()

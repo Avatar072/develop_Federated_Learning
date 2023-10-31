@@ -114,11 +114,16 @@ def ParseCommandLineArgs(commands):
      # 添加一个参数来设置训练的轮数
     parser.add_argument('--weaklabel', type=int, default=8, help='encode of weak label')
 
+    # add load method
+    parser.add_argument('--method', type=str, choices=['normal','SMOTE', 'GAN'], default='normal',
+                        help='Choose the process method for training (normal or SMOTE or GAN)')
     # 解析命令行参数
     args = parser.parse_args()
 
     # 根据输入的命令列表来确定返回的参数
-    if 'dataset' in commands and 'epochs' in commands and 'weaklabel' in commands:
+    if 'dataset' in commands and 'epochs' in commands and 'method' in commands:
+        return args.dataset, args.epochs, args.method
+    elif 'dataset' in commands and 'epochs' in commands and 'weaklabel' in commands:
         return args.dataset, args.epochs, args.weaklabel
     elif 'dataset' in commands and 'epochs' in commands:
         return args.dataset, args.epochs
@@ -136,10 +141,12 @@ def ParseCommandLineArgs(commands):
 def ChooseTrainDatastes(filepath, my_command):
     # 加载选择的数据集
     if my_command == 'total_train':
-        print("Training with total_train")
-        train_dataframe = pd.read_csv(os.path.join(filepath, 'data', 'train_dataframes_respilt.csv'))
-        x_train = np.array(train_dataframe.iloc[:, :-1])
-        y_train = np.array(train_dataframe.iloc[:, -1])
+        # print("Training with total_train")
+        # train_dataframe = pd.read_csv(os.path.join(filepath, 'data', 'train_dataframes_respilt.csv'))
+        # x_train = np.array(train_dataframe.iloc[:, :-1])
+        # y_train = np.array(train_dataframe.iloc[:, -1])
+        x_train = np.load(filepath + "x_total_train.npy", allow_pickle=True)
+        y_train = np.load(filepath + "y_total_train.npy", allow_pickle=True)
         client_str = "Local"
 
     elif my_command == 'train_half1':
@@ -186,14 +193,17 @@ def ChooseLoadNpArray(filepath, file, Choose_method):
     if file == 'total_train':
         print("Training with total_train")
         if (Choose_method == 'normal'):
-             print(Choose_method)
              x_train = np.load(filepath + "x_total_train.npy", allow_pickle=True)
              y_train = np.load(filepath + "y_total_train.npy", allow_pickle=True)
         elif (Choose_method == 'SMOTE'):
-            print(Choose_method)
             x_train = np.load(filepath + "x_total_train_SMOTE_ALL_Label.npy", allow_pickle=True)
             y_train = np.load(filepath + "y_total_train_SMOTE_ALL_Label.npy", allow_pickle=True)
-        client_str = "Local"
+        elif (Choose_method == 'GAN'):
+            x_train = np.load(filepath + "x_total_train.npy", allow_pickle=True)
+            y_train = np.load(filepath + "y_total_train.npy", allow_pickle=True)
+        
+        client_str = "BaseLine"
+        print(Choose_method)
 
     elif file == 'train_half1':
         # x_train = np.load(filepath + "x_train_half1.npy", allow_pickle=True)
@@ -231,7 +241,7 @@ def ChooseLoadNpArray(filepath, file, Choose_method):
         print("使用 train_half2 進行訓練")
 
     print("use file", file)
-    return x_train, y_train,client_str, Choose_method
+    return x_train, y_train,client_str
 
 ### find找到datasets中是string的行
 def findStringCloumn(dataFrame):
