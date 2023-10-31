@@ -49,27 +49,32 @@ def SaveDataToCsvfile(df, folder_name, filename):
     print("當前工作目錄", current_directory)
     # folder_name = filename + "_folder"
     print("資料夾名稱", folder_name)
-    generatefolder(folder_name)
+    folder_name = generatefolder(folder_name)
     csv_filename = os.path.join(current_directory, 
                                 folder_name, filename + ".csv")
     print("存檔位置跟檔名", csv_filename)
     df.to_csv(csv_filename, index=False)
 
 ### 建立一個資料夾
-def generatefolder(folder_name):
+def generatefolder(fliepath, folder_name):
+    if fliepath is None:
+        fliepath = os.getcwd()
+        print("當前工作目錄", fliepath) 
+    
     if folder_name is None:
         folder_name = "my_AnalyseReportfolder"
 
-    file_not_exists  = CheckFolderExists(folder_name)
+    file_not_exists  = CheckFolderExists(fliepath +folder_name)
     print("file_not_exists:",file_not_exists)
     # 使用os.path.exists()檢文件夹是否存在
     if file_not_exists:
         # 如果文件夹不存在，就创建它
-        os.makedirs(folder_name)
-        print(f"資料夾 '{folder_name}' 創建。")
+        os.makedirs(fliepath + folder_name)
+        print(f"資料夾 '{fliepath +folder_name}' 創建。")
     else:
-        print(f"資料夾 '{folder_name}' 已存在，不需再創建。")
-
+        print(f"資料夾 '{fliepath +folder_name}' 已存在，不需再創建。")
+        
+    return folder_name
 ### 合併DataFrame成csv
 def mergeDataFrameAndSaveToCsv(trainingtype, x_train,y_train, filename, weaklabel, epochs):
     # 创建两个DataFrame分别包含x_train和y_train
@@ -100,8 +105,8 @@ def ParseCommandLineArgs(commands):
     parser = argparse.ArgumentParser(description='Federated Learning Client')
 
     # 添加一个参数来选择数据集
-    parser.add_argument('--dataset', type=str, choices=['train_half1', 'train_half2'], default='train_half1',
-                        help='Choose the dataset for training (train_half1 or train_half2)')
+    parser.add_argument('--dataset', type=str, choices=['total_train','train_half1', 'train_half2'], default='total_train',
+                        help='Choose the dataset for training (total_train or train_half1 or train_half2)')
 
     # 添加一个参数来设置训练的轮数
     parser.add_argument('--epochs', type=int, default=100, help='Number of training epochs')
@@ -130,16 +135,25 @@ def ParseCommandLineArgs(commands):
 
 def ChooseTrainDatastes(filepath, my_command):
     # 加载选择的数据集
-    if my_command == 'train_half1':
+    if my_command == 'total_train':
+        print("Training with total_train")
+        train_dataframe = pd.read_csv(os.path.join(filepath, 'data', 'train_dataframes_respilt.csv'))
+        x_train = np.array(train_dataframe.iloc[:, :-1])
+        y_train = np.array(train_dataframe.iloc[:, -1])
+        client_str = "Local"
+
+    elif my_command == 'train_half1':
         print("Training with train_half1")
-        train_dataframe = pd.read_csv(os.path.join(filepath, 'data', 'train_df_half1.csv'))
+        # train_dataframe = pd.read_csv(os.path.join(filepath, 'data', 'train_df_half1.csv'))
+        train_dataframe = pd.read_csv(os.path.join(filepath, 'data', 'train_half1_re.csv'))
         x_train = np.array(train_dataframe.iloc[:, :-1])
         y_train = np.array(train_dataframe.iloc[:, -1])
         client_str = "client1"
         
     elif my_command == 'train_half2':
         print("Training with train_half2")
-        train_dataframe = pd.read_csv(os.path.join(filepath, 'data', 'train_df_half2.csv'))
+        # train_dataframe = pd.read_csv(os.path.join(filepath, 'data', 'train_df_half2.csv'))
+        train_dataframe = pd.read_csv(os.path.join(filepath, 'data', 'train_half2_re.csv'))
         x_train = np.array(train_dataframe.iloc[:, :-1])
         y_train = np.array(train_dataframe.iloc[:, -1])
         client_str = "client2"
@@ -157,22 +171,37 @@ def ChooseTestDataSet(filepath):
     return x_test, y_test
 
 ### sava dataframe to np array 
-def SaveDataframeTonpArray(dataframe, traindf_name, filename):
+def SaveDataframeTonpArray(dataframe, df_name, filename):
     #選擇了最后一列Lable之外的所有列，即選擇所有feature
     x = np.array(dataframe.iloc[:,:-1])
     y = np.array(dataframe.iloc[:,-1])
 
     #np.save
-    np.save(f"x_{traindf_name}_{filename}.npy", x)
-    np.save(f"y_{traindf_name}_{filename}.npy", y)
+    np.save(f"x_{df_name}_{filename}.npy", x)
+    np.save(f"y_{df_name}_{filename}.npy", y)
 
 ### Choose Load np array
-def ChooseLoadNpArray(filepath, file):
-    if file == 'train_half1':
+def ChooseLoadNpArray(filepath, file, Choose_method):
+
+    if file == 'total_train':
+        print("Training with total_train")
+        if (Choose_method == 'normal'):
+             print(Choose_method)
+             x_train = np.load(filepath + "x_total_train.npy", allow_pickle=True)
+             y_train = np.load(filepath + "y_total_train.npy", allow_pickle=True)
+        elif (Choose_method == 'SMOTE'):
+            print(Choose_method)
+            x_train = np.load(filepath + "x_total_train_SMOTE_ALL_Label.npy", allow_pickle=True)
+            y_train = np.load(filepath + "y_total_train_SMOTE_ALL_Label.npy", allow_pickle=True)
+        client_str = "Local"
+
+    elif file == 'train_half1':
         # x_train = np.load(filepath + "x_train_half1.npy", allow_pickle=True)
         # y_train = np.load(filepath + "y_train_half1.npy", allow_pickle=True)
-        x_train = np.load(filepath + "x_train_half1_respilt.npy", allow_pickle=True)
-        y_train = np.load(filepath + "y_train_half1_respilt.npy", allow_pickle=True)
+        x_train = np.load(filepath + "x_train_half1_SMOTE_ALL_weakLabel.npy", allow_pickle=True)
+        y_train = np.load(filepath + "y_train_half1_SMOTE_ALL_weakLabel.npy", allow_pickle=True)
+        # x_train = np.load(filepath + "x_train_half1_respilt.npy", allow_pickle=True)
+        # y_train = np.load(filepath + "y_train_half1_respilt.npy", allow_pickle=True)
         # x_train = np.load(filepath + f"x_{file}_weakpoint_14.npy", allow_pickle=True)
         # y_train = np.load(filepath + f"y_{file}_weakpoint_14.npy", allow_pickle=True)
         # x_train = np.load(filepath + f"x_{file}_weakpoint_9.npy", allow_pickle=True)
@@ -182,8 +211,10 @@ def ChooseLoadNpArray(filepath, file):
         client_str = "client1"
         print("使用 train_half1 進行訓練")
     elif file == 'train_half2':
-        x_train = np.load(filepath + "x_train_half2_respilt.npy", allow_pickle=True)
-        y_train = np.load(filepath + "y_train_half2_respilt.npy", allow_pickle=True)
+        # x_train = np.load(filepath + "x_train_half2_respilt.npy", allow_pickle=True)
+        # y_train = np.load(filepath + "y_train_half2_respilt.npy", allow_pickle=True)
+        x_train = np.load(filepath + "x_train_half2_SMOTE_ALL_weakLabel.npy", allow_pickle=True)
+        y_train = np.load(filepath + "y_train_half2_SMOTE_ALL_weakLabel.npy", allow_pickle=True)
         # x_train = np.load(filepath + f"x_{file}.npy", allow_pickle=True)
         # y_train = np.load(filepath + f"y_{file}.npy", allow_pickle=True)
         # x_train = np.load(filepath + f"x_{file}_SMOTE_8.npy", allow_pickle=True)
@@ -200,7 +231,7 @@ def ChooseLoadNpArray(filepath, file):
         print("使用 train_half2 進行訓練")
 
     print("use file", file)
-    return x_train, y_train,client_str
+    return x_train, y_train,client_str, Choose_method
 
 ### find找到datasets中是string的行
 def findStringCloumn(dataFrame):
