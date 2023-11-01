@@ -6,15 +6,14 @@ from sklearn import preprocessing
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import StratifiedShuffleSplit
 from sklearn.decomposition import PCA
+from mytoolfunction import SaveDataToCsvfile,printFeatureCountAndLabelCountInfo
+from mytoolfunction import clearDirtyData,label_Encoding,splitdatasetbalancehalf,spiltweakLabelbalance,SaveDataframeTonpArray
 
 #############################################################################  variable  ###################
 filepath = "D:\\Labtest20230911\\data"
 #############################################################################  variable  ###################
 
 #############################################################################  funcion宣告與實作  ###########
-### for sorting the labeled data based on support
-def sortingFunction(data):
-    return data.shape[0]
 
 # 加载CICIDS 2017数据集
 def writeData(file_path):
@@ -64,31 +63,6 @@ def check_column_names(dataframes):
 
     return True
 
-# ##  清除CIC-IDS-2017 資料集中的dirty data，包含NaN、Infinity、包含空白或小于ASCII 32的字符
-def clearDirtyData(df):
-    # 檢查第一列featurea名稱是否包含空白或是小于ASCII 32的字元
-    first_column = df.columns[0]
-    is_dirty = first_column.isspace() or ord(first_column[0]) < 32
-
-    # 將"inf"值替換為NaN
-    df.replace("inf", np.nan, inplace=True)
-
-    # 找到包含NaN、Infinity和"inf"值的行，並將其index添加到dropList
-    nan_inf_rows = df[df.isin([np.nan, np.inf, -np.inf]).any(axis=1)].index.tolist()
-
-    # 將第一列featurea名稱所在的index添加到dropList
-    if is_dirty:
-        nan_inf_rows.append(0)
-
-    # 去重dropList中的index
-    dropList = list(set(nan_inf_rows))
-
-    # 刪除包含dirty data的行
-    df_clean = df.drop(dropList)
-
-    return df_clean
-
-
 
 ### 检查CSV文件是否存在，如果不存在，则合并数据并保存到CSV文件中
 def ChecktotalCsvFileIsexists(file):
@@ -113,75 +87,20 @@ def ChecktotalCsvFileIsexists(file):
 
 
 ### label encoding
-def label_Encoding(label):
-    label_encoder = preprocessing.LabelEncoder()
-    mergecompelete_dataset[label] = label_encoder.fit_transform(mergecompelete_dataset[label])
-    mergecompelete_dataset[label].unique()
+# def label_Encoding(label):
+#     label_encoder = preprocessing.LabelEncoder()
+#     mergecompelete_dataset[label] = label_encoder.fit_transform(mergecompelete_dataset[label])
+#     mergecompelete_dataset[label].unique()
 
-### Save data to csv
-def SaveDataToCsvfile(df, filename):
-    df.to_csv(filepath + "\\"+ filename +".csv", index=False)
-
-
-### find找到datasets中是string的行
-def findStringCloumn(dataFrame):
-        string_columns = dataFrame.select_dtypes(include=['object'])
-        for column in string_columns.columns:
-            print(f"{dataFrame} 中type為 'object' 的列: {column}")
-            print(string_columns[column].value_counts())
-            print("\n")
-
-
-### check train_df_half1 and train_df_half2 dont have duplicate data
-def CheckDuplicate(dataFrame1, dataFrame2):
-    intersection = len(set(dataFrame1.index) & set(dataFrame2.index))
-    print(f"{dataFrame1} 和 {dataFrame2} 的index交集数量:", intersection)
-    print(f"{dataFrame1} 和 {dataFrame2}是否相同:", dataFrame1.equals(dataFrame2)) 
-
-
-### print information 
-def printFeatureCountAndLabelCountInfo(dataFrame1, dataFrame2):
-     # 計算feature數量
-    num_features_dataFrame1 = dataFrame1.shape[1] - 1
-    num_features_dataFrame2 = dataFrame2.shape[1] - 1 
-     # 計算Label數量
-    label_counts = dataFrame1['Label'].value_counts()
-    label_counts2 = dataFrame2['Label'].value_counts()
-
-    print(f"{str(dataFrame1)} 的feature:", num_features_dataFrame1)
-    print(f"{str(dataFrame1)} 的label數:", len(label_counts))
-    print(f"{str(dataFrame1)} 的除了最後一列Label列之外的所有列,即選擇feature數:\n", dataFrame1.iloc[:,:-1])
-    findStringCloumn(dataFrame1)
-
-    print(f"{str(dataFrame2)} 的feature:", num_features_dataFrame2)
-    print(f"{str(dataFrame2)} 的label數:", len(label_counts2))
-    print(f"{str(dataFrame2)} 的除了最後一列Label列之外的所有列,即選擇feature數:\n", dataFrame2.iloc[:,:-1])
-    findStringCloumn(dataFrame2)
-
-    CheckDuplicate(dataFrame1, dataFrame2)
-
-    mergecompelete_dataset_total_rows = len(mergecompelete_dataset)
-    print(f"{str(mergecompelete_dataset)}資料集的行数\n",mergecompelete_dataset_total_rows)
     
-### Save np 
-
-### 指定要建的資料夾名稱
-def generatefolder():
-    folder_name = "my_AnalyseReportfolder"
-    # 使用os.path.exists()检查文件夹是否存在
-    if not os.path.exists(folder_name):
-        # 如果文件夹不存在，就创建它
-        os.makedirs(folder_name)
-        print(f"文件夹 '{folder_name}' 已创建。")
-    else:
-        print(f"文件夹 '{folder_name}' 已存在，无需创建。")
-
 ### label Encoding And Replace the number of greater than 10,000
 def LabelEncodingAndReplaceMorethanTenthousandQuantity(df):
     # 将 CSV 中的所有列中的 � 替换为空白（使用 Unicode 编码）
     # label Encoding
     df['Label'] = df['Label'].str.replace('\ufffd', '', regex=False)
-    label_Encoding('Label')
+    label_Encoding('Label',df)
+    # df['DestinationPort'] = df['DestinationPort'].astype(str)# 這邊Label encoding失敗，DestinationPort拉出來到mytoolfunction.py單獨從做一次
+    # label_Encoding('DestinationPort',df)
     # 保存編碼后的 DataFrame 回到 CSV 文件
     df.to_csv(filepath + "\\total_encoded.csv", index=False)
   
@@ -210,36 +129,10 @@ def LabelEncodingAndReplaceMorethanTenthousandQuantity(df):
         extracted_df = pd.concat([extracted_df, label_df])
 
     # 将更新后的DataFrame保存到文件
-    # extracted_df.to_csv(filepath + '\\total_encoded_updated.csv', index=False)
-    SaveDataToCsvfile(extracted_df, "total_encoded_updated")
+    SaveDataToCsvfile(extracted_df, "./data","total_encoded_updated")
 
     # 打印修改后的结果
     print(extracted_df['Label'].value_counts())
-
-
-### sava np array 
-def DoTrainAndTestChangeTypeTonpArray():
-    #選擇了最后一列Lable之外的所有列，即選擇所有feature
-    x_train_half1 = np.array(train_df_half1.iloc[:,:-1])
-    y_train_half1 = np.array(train_df_half1.iloc[:,-1])
-
-    x_train_half2 = np.array(train_df_half2.iloc[:,:-1])
-    y_train_half2 = np.array(train_df_half2.iloc[:,-1])
-
-    x_test = np.array(test_dataframes.iloc[:,:-1])
-    y_test = np.array(test_dataframes.iloc[:,-1]) 
-
-    #np.save
-    np.save('x_train_half1.npy', x_train_half1)
-    np.save('x_train_half2.npy', x_train_half2)
-    np.save('y_train_half1.npy', y_train_half1)
-    np.save('y_train_half2.npy', y_train_half2)
-    np.save('x_test.npy', x_test)
-    np.save('y_test.npy', y_test)
-
-    # Save data to csv
-    SaveDataToCsvfile(train_df_half1, "train_df_half1")
-    SaveDataToCsvfile(train_df_half2, "train_df_half2")
 
 
 # CheckCsvFileIsexists檢查file存不存在，若file不存在產生新檔
@@ -254,7 +147,7 @@ mergecompelete_dataset = pd.read_csv(filepath + "\\total_encoded_updated.csv")
 ### extracting features
 X=mergecompelete_dataset.iloc[:,:-1]
 X=X.values
-scaler = preprocessing.StandardScaler()
+scaler = preprocessing.StandardScaler()# 資料標準化
 scaler.fit(X)
 X=scaler.transform(X)
 
@@ -273,28 +166,52 @@ finalDf = pd.concat([principalDf, mergecompelete_dataset[['Label']]], axis = 1)
 mergecompelete_dataset=finalDf
 
 # split mergecompelete_dataset各一半
-train_dataframes, test_dataframes = train_test_split(mergecompelete_dataset, test_size=0.4, random_state=42)#test_size=0.4表示将数据集分成测试集的比例为40%
+train_dataframes, test_dataframes = train_test_split(mergecompelete_dataset, test_size=0.2, random_state=42)#test_size=0.4表示将数据集分成测试集的比例为40%
 
-SaveDataToCsvfile(train_dataframes, "train_dataframes")
-SaveDataToCsvfile(test_dataframes, "test_dataframes")
+# SaveDataToCsvfile(train_dataframes, "./data","train_dataframes")
+# SaveDataToCsvfile(test_dataframes, "./data","test_dataframes")
 # train_dataframes和test_dataframes information
 printFeatureCountAndLabelCountInfo(train_dataframes, test_dataframes)
 
-# split train_dataframes各一半
-train_df_half1, train_df_half2 = train_test_split(train_dataframes, test_size=0.5)
 
+# train_df_half1, train_df_half2 = train_test_split(train_dataframes, test_size=0.5)
+
+# 分別取出Label等於8、9、13、14的數據 對半分
+train_label_8, test_label_8 = spiltweakLabelbalance(8,mergecompelete_dataset,0.4)
+train_label_9, test_label_9 = spiltweakLabelbalance(9,mergecompelete_dataset,0.5)
+train_label_13, test_label_13 = spiltweakLabelbalance(13,mergecompelete_dataset,0.5)
+train_label_14, test_label_14 = spiltweakLabelbalance(14,mergecompelete_dataset,0.5)
+
+# 刪除Label相當於8、9、13、14的行
+test_dataframes = test_dataframes[~test_dataframes['Label'].isin([8, 9,13, 14])]
+train_dataframes = train_dataframes[~train_dataframes['Label'].isin([8, 9,13,14])]
+# 合併Label8、9、13、14回去
+test_dataframes = pd.concat([test_dataframes, test_label_8, test_label_9, test_label_13, test_label_14])
+train_dataframes = pd.concat([train_dataframes,train_label_8, train_label_9,train_label_13,train_label_14])
+
+label_counts = test_dataframes['Label'].value_counts()
+print("test_dataframes\n", label_counts)
+label_counts = train_dataframes['Label'].value_counts()
+print("train_dataframes\n", label_counts)
+
+# split train_dataframes各一半
+train_half1,train_half2 = splitdatasetbalancehalf(train_dataframes)
 
 # 找到train_df_half1和train_df_half2中重复的行
-duplicates = train_df_half2[train_df_half2.duplicated(keep=False)]
+duplicates = train_half2[train_half2.duplicated(keep=False)]
 
 # 删除train_df_half2中与train_df_half1重复的行
-train_df_half2 = train_df_half2[~train_df_half2.duplicated(keep=False)]
+train_df_half2 = train_half2[~train_half2.duplicated(keep=False)]
 
 # train_df_half1和train_df_half2 detail information
-printFeatureCountAndLabelCountInfo(train_df_half1, train_df_half2)
+printFeatureCountAndLabelCountInfo(train_half1, train_df_half2)
 
-
-DoTrainAndTestChangeTypeTonpArray()
-
+SaveDataToCsvfile(train_dataframes, "./data", "train_dataframes_20231101")
+SaveDataToCsvfile(test_dataframes,  "./data", "test_dataframes_20231101")
+SaveDataToCsvfile(train_half1, "./data", "train_half1_20231101")
+SaveDataToCsvfile(train_half2,  "./data", "train_half2_20231101") 
+SaveDataframeTonpArray(test_dataframes, "test", "20231101")
+SaveDataframeTonpArray(train_half1, "train_half1", "20231101")
+SaveDataframeTonpArray(train_half2, "train_half2", "20231101")
 
 
