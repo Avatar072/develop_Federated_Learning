@@ -4,6 +4,9 @@ import numpy as np
 import argparse
 import time
 from datetime import datetime
+from sklearn import preprocessing
+from sklearn.model_selection import StratifiedShuffleSplit
+from sklearn.model_selection import train_test_split
 
 ### 生成列名列表
 column_names = ["principal_Component" + str(i) for i in range(1, 79)] + ["Label"]
@@ -49,7 +52,7 @@ def SaveDataToCsvfile(df, folder_name, filename):
     print("當前工作目錄", current_directory)
     # folder_name = filename + "_folder"
     print("資料夾名稱", folder_name)
-    folder_name = generatefolder(folder_name)
+    folder_name = generatefolder(current_directory + "\\",folder_name)
     csv_filename = os.path.join(current_directory, 
                                 folder_name, filename + ".csv")
     print("存檔位置跟檔名", csv_filename)
@@ -193,14 +196,18 @@ def ChooseLoadNpArray(filepath, file, Choose_method):
     if file == 'total_train':
         print("Training with total_train")
         if (Choose_method == 'normal'):
-             x_train = np.load(filepath + "x_total_train.npy", allow_pickle=True)
-             y_train = np.load(filepath + "y_total_train.npy", allow_pickle=True)
+            #  x_train = np.load(filepath + "x_total_train.npy", allow_pickle=True)
+            #  y_train = np.load(filepath + "y_total_train.npy", allow_pickle=True)
+            x_train = np.load(filepath + "x_total_train_20231101.npy", allow_pickle=True)
+            y_train = np.load(filepath + "y_total_train_20231101.npy", allow_pickle=True)
         elif (Choose_method == 'SMOTE'):
             x_train = np.load(filepath + "x_total_train_SMOTE_ALL_Label.npy", allow_pickle=True)
             y_train = np.load(filepath + "y_total_train_SMOTE_ALL_Label.npy", allow_pickle=True)
         elif (Choose_method == 'GAN'):
-            x_train = np.load(filepath + "x_total_train.npy", allow_pickle=True)
-            y_train = np.load(filepath + "y_total_train.npy", allow_pickle=True)
+            # x_train = np.load(filepath + "x_total_train.npy", allow_pickle=True)
+            # y_train = np.load(filepath + "y_total_train.npy", allow_pickle=True)
+            x_train = np.load(filepath + "x_GAN_data_total_train_weakpoint_14.npy", allow_pickle=True)
+            y_train = np.load(filepath + "y_GAN_data_total_train_weakpoint_14.npy", allow_pickle=True)
         
         client_str = "BaseLine"
         print(Choose_method)
@@ -257,7 +264,7 @@ def CheckDuplicate(dataFrame1, dataFrame2):
     print(f"{dataFrame1} 和 {dataFrame2} 的index交集数量:", intersection)
     print(f"{dataFrame1} 和 {dataFrame2}是否相同:", dataFrame1.equals(dataFrame2))
     
-### print information 
+### print dataset information 
 def printFeatureCountAndLabelCountInfo(dataFrame1, dataFrame2):
      # 計算feature數量
     num_features_dataFrame1 = dataFrame1.shape[1] - 1
@@ -278,14 +285,79 @@ def printFeatureCountAndLabelCountInfo(dataFrame1, dataFrame2):
 
     CheckDuplicate(dataFrame1, dataFrame2)
 
+### label encoding
+# def label_Encoding(label):
+#     label_encoder = preprocessing.LabelEncoder()
+#     mergecompelete_dataset[label] = label_encoder.fit_transform(mergecompelete_dataset[label])
+#     mergecompelete_dataset[label].unique()
+
+def label_Encoding(label,df):
+    label_encoder = preprocessing.LabelEncoder()
+    df[label] = label_encoder.fit_transform(df[label])
+    df[label].unique()
+    print(f"{label}",df[label].unique())
+
+
+# ##  清除CIC-IDS-2017 資料集中的dirty data，包含NaN、Infinity、包含空白或小于ASCII 32的字符
+def clearDirtyData(df):
+    # 檢查第一列featurea名稱是否包含空白或是小于ASCII 32的字元
+    first_column = df.columns[0]
+    is_dirty = first_column.isspace() or ord(first_column[0]) < 32
+
+    # 將"inf"值替換為NaN
+    df.replace("inf", np.nan, inplace=True)
+
+    # 找到包含NaN、Infinity和"inf"值的行，並將其index添加到dropList
+    nan_inf_rows = df[df.isin([np.nan, np.inf, -np.inf]).any(axis=1)].index.tolist()
+
+    # 將第一列featurea名稱所在的index添加到dropList
+    if is_dirty:
+        nan_inf_rows.append(0)
+
+    # 去重dropList中的index
+    dropList = list(set(nan_inf_rows))
+
+    # 刪除包含dirty data的行
+    df_clean = df.drop(dropList)
+
+    return df_clean
+
+### for sorting the labeled data based on support
+def sortingFunction(data):
+    return data.shape[0]
+
+# 使用分層劃分資料集 平均劃分資料集 
+def splitdatasetbalancehalf(train_dataframes):
+    stratified_split = StratifiedShuffleSplit(n_splits=1, test_size=0.5, random_state=42)
+    for train_indices, test_indices in stratified_split.split(train_dataframes, train_dataframes['Label']):
+        df1 = train_dataframes.iloc[train_indices]
+        df2 = train_dataframes.iloc[test_indices]
+        label_counts = df1['Label'].value_counts()
+        label_counts2 = df2['Label'].value_counts()
+        print("train_half1\n",label_counts)
+        print("train_half2\n",label_counts2)
+
+    return df1,df2
+
+def spiltweakLabelbalance(weakLabel,original_dataset,size):
+    label_data = original_dataset[original_dataset['Label'] == weakLabel]
+    # 使用train_test_split分別劃分取Label相等8、9、13、14的數據
+    train_label, test_label = train_test_split(label_data, test_size=size, random_state=42)
+    return train_label, test_label
+
 ## 將結合weakLabel Label8 的train_half1轉成np array
 # gan_dataframe = pd.read_csv("D:\\Labtest20230911\\GAN_data_train_half1\\GAN_data_train_half1_ADD_weakLabel_8.csv")
 # SaveDataframeTonpArray(gan_dataframe, "train_half1","weakpoint_8")
-# gan_dataframe = pd.read_csv("D:\\Labtest20230911\\GAN_data_train_half1\\20231017_BK\\GAN_data_weakpoint_14.csv")
-# # gan_dataframe = pd.read_csv("D:\\Labtest20230911\\GAN_data_train_half1\\GAN_data_train_half1_ADD_weakLabel_9.csv")
-# SaveDataframeTonpArray(gan_dataframe, "train_half1","weakpoint_14")
+# gan_dataframe = pd.read_csv("D:\\Labtest20230911\\GAN_data_total_train\\GAN_data_total_train_ADD_weakLabel_14.csv")
+# # # gan_dataframe = pd.read_csv("D:\\Labtest20230911\\GAN_data_train_half1\\GAN_data_train_half1_ADD_weakLabel_9.csv")
+# SaveDataframeTonpArray(gan_dataframe, "GAN_data_total_train","weakpoint_14")
+### DestinationPort拉出來到mytoolfunction.py單獨從做一次
+# df = pd.read_csv("D:\\Labtest20230911\\data\\total_encoded_updated.csv")
+# df['DestinationPort'] = df['DestinationPort'].astype(str)
 
 
+# label_Encoding('DestinationPort',df)
+# SaveDataToCsvfile(df, "./data", "total_encoded_updated_20231101")
 
 ############################################################# other
 # # 命令行參數解析器
