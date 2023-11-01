@@ -1,16 +1,22 @@
 import warnings
 import random
 import os
+import time
+import datetime
 import numpy as np
 import pandas as pd
 from sklearn import preprocessing
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import StratifiedShuffleSplit
 from sklearn.decomposition import PCA
-from mytoolfunction import SaveDataToCsvfile, SaveDataframeTonpArray
+from mytoolfunction import SaveDataToCsvfile, SaveDataframeTonpArray,generatefolder
 
 #############################################################################  variable  ###################
 filepath = "D:\\Labtest20230911\\data"
+today = datetime.date.today()
+today = today.strftime("%Y%m%d")
+# 在D:\\Labtest20230911\\data產生天日期的資料夾
+generatefolder(filepath + "\\", today)
 # Loading datasets after label_Encoding
 mergecompelete_dataset = pd.read_csv(filepath + "\\total_encoded_updated.csv")
 
@@ -88,10 +94,11 @@ def splitdatasetbalancehalf():
 
 train_half1,train_half2 = splitdatasetbalancehalf()
 
-SaveDataToCsvfile(train_dataframes, "respiltData", "train_dataframes_respilt")
-SaveDataToCsvfile(test_dataframes,  "respiltData", "test_dataframes_respilt")
-SaveDataToCsvfile(train_half1, "respiltData", "train_half1_re")
-SaveDataToCsvfile(train_half2,  "respiltData", "train_half2_re") 
-SaveDataframeTonpArray(test_dataframes, "test", "respilt")
-SaveDataframeTonpArray(train_half1, "train_half1", "respilt")
-SaveDataframeTonpArray(train_half2, "train_half2", "respilt")
+SaveDataToCsvfile(train_dataframes, f"./data/{today}", f"train_dataframes_{today}")
+SaveDataToCsvfile(test_dataframes, f"./data/{today}", f"test_dataframes_{today}")
+SaveDataToCsvfile(train_half1, f"./data/{today}", f"train_half1_{today}")
+SaveDataToCsvfile(train_half2,  f"./data/{today}", f"train_half2_{today}") 
+SaveDataframeTonpArray(test_dataframes, "test", today)
+SaveDataframeTonpArray(train_dataframes, "total_train", today)
+SaveDataframeTonpArray(train_half1, "train_half1", today)
+SaveDataframeTonpArray(train_half2, "train_half2", today)
