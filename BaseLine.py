@@ -47,8 +47,8 @@ generatefolder(f"./single_AnalyseReportFolder/{today}/{client_str}/", Choose_met
 
 # x_test = np.load(filepath + "x_test.npy", allow_pickle=True)
 # y_test = np.load(filepath + "y_test.npy", allow_pickle=True)
-x_test = np.load(filepath + "x_test_respilt.npy", allow_pickle=True)
-y_test = np.load(filepath + "y_test_respilt.npy", allow_pickle=True)
+x_test = np.load(filepath + "x_test_20231101.npy", allow_pickle=True)
+y_test = np.load(filepath + "y_test_20231101.npy", allow_pickle=True)
 
 x_train = torch.from_numpy(x_train).type(torch.FloatTensor)
 y_train = torch.from_numpy(y_train).type(torch.LongTensor)
@@ -63,19 +63,41 @@ x_test = x_test.to(DEVICE)
 y_test = y_test.to(DEVICE)
 
 # 定義你的神經網絡模型
-class Net(nn.Module):
-    def __init__(self) -> None:
-        super(Net, self).__init__()
-        self.fc1 = nn.Linear(x_train.shape[1], 512)
+# class Net(nn.Module):
+#     def __init__(self) -> None:
+#         super(Net, self).__init__()
+#         self.fc1 = nn.Linear(x_train.shape[1], 512)
+#         self.fc2 = nn.Linear(512, 512)
+#         self.fc3 = nn.Linear(512, 512)
+#         self.fc4 = nn.Linear(512, 15)
+
+#     def forward(self, x: torch.FloatTensor) -> torch.FloatTensor:
+#         x = F.relu(self.fc1(x))
+#         x = F.relu(self.fc2(x))
+#         x = F.relu(self.fc3(x))
+#         x = self.fc4(x)
+#         return x
+class MLP(nn.Module):
+    def __init__(self):
+        super(MLP, self).__init__()
+        self.layer1 = nn.Linear(x_train.shape[1], 512)
         self.fc2 = nn.Linear(512, 512)
         self.fc3 = nn.Linear(512, 512)
-        self.fc4 = nn.Linear(512, 15)
+        self.fc4 = nn.Linear(512, 512)
+        self.fc5 = nn.Linear(512, 512)
+        self.fc6 = nn.Linear(512, 512)
+        self.fc7 = nn.Linear(512, 512)
+        self.layer8 = nn.Linear(512, 15)
 
-    def forward(self, x: torch.FloatTensor) -> torch.FloatTensor:
-        x = F.relu(self.fc1(x))
+    def forward(self, x):
+        x = F.relu(self.layer1(x))
         x = F.relu(self.fc2(x))
         x = F.relu(self.fc3(x))
-        x = self.fc4(x)
+        x = F.relu(self.fc4(x))
+        x = F.relu(self.fc5(x))
+        x = F.relu(self.fc6(x))
+        x = F.relu(self.fc7(x))
+        x = self.layer8(x)
         return x
 
 # 定義訓練函數
@@ -191,7 +213,8 @@ trainloader = DataLoader(train_data, batch_size=500, shuffle=True)
 testloader = DataLoader(test_data, batch_size=len(test_data), shuffle=False)
 
 # 初始化神經網絡模型
-net = Net().to(DEVICE)
+# net = Net().to(DEVICE)
+net = MLP().to(DEVICE)
 
 # 訓練模型
 train(net, trainloader, epochs=num_epochs)
