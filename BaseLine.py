@@ -47,8 +47,10 @@ generatefolder(f"./single_AnalyseReportFolder/{today}/{client_str}/", Choose_met
 
 # x_test = np.load(filepath + "x_test.npy", allow_pickle=True)
 # y_test = np.load(filepath + "y_test.npy", allow_pickle=True)
-x_test = np.load(filepath + "x_test_20231101.npy", allow_pickle=True)
-y_test = np.load(filepath + "y_test_20231101.npy", allow_pickle=True)
+# x_test = np.load(filepath + "x_test_20231102.npy", allow_pickle=True)
+# y_test = np.load(filepath + "y_test_20231102.npy", allow_pickle=True)
+x_test = np.load(filepath + "x_test_onlyThursday_20231102.npy", allow_pickle=True)
+y_test = np.load(filepath + "y_test_onlyThursday_20231102.npy", allow_pickle=True)
 
 x_train = torch.from_numpy(x_train).type(torch.FloatTensor)
 y_train = torch.from_numpy(y_train).type(torch.LongTensor)
@@ -84,21 +86,51 @@ class MLP(nn.Module):
         self.fc2 = nn.Linear(512, 512)
         self.fc3 = nn.Linear(512, 512)
         self.fc4 = nn.Linear(512, 512)
-        self.fc5 = nn.Linear(512, 512)
-        self.fc6 = nn.Linear(512, 512)
-        self.fc7 = nn.Linear(512, 512)
-        self.layer8 = nn.Linear(512, 15)
+        self.layer5 = nn.Linear(512, 5)
 
     def forward(self, x):
         x = F.relu(self.layer1(x))
         x = F.relu(self.fc2(x))
         x = F.relu(self.fc3(x))
         x = F.relu(self.fc4(x))
-        x = F.relu(self.fc5(x))
-        x = F.relu(self.fc6(x))
-        x = F.relu(self.fc7(x))
-        x = self.layer8(x)
+        x = self.layer5(x)
         return x
+# class MLP(nn.Module):
+#     def __init__(self):
+#         super(MLP, self).__init__()
+#         self.layer1 = nn.Linear(x_train.shape[1], 512)
+#         self.fc2 = nn.Linear(512, 512)
+#         self.fc3 = nn.Linear(512, 512)
+#         self.fc4 = nn.Linear(512, 512)
+#         self.fc5 = nn.Linear(512, 512)
+#         self.fc6 = nn.Linear(512, 512)
+#         self.fc7 = nn.Linear(512, 512)
+#         self.layer8 = nn.Linear(512, 15)
+
+#     def forward(self, x):
+#         x = F.relu(self.layer1(x))
+#         x = F.relu(self.fc2(x))
+#         x = F.relu(self.fc3(x))
+#         x = F.relu(self.fc4(x))
+#         x = F.relu(self.fc5(x))
+
+class Multiclass(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.hidden1 = nn.Linear(78, 50)
+        self.hidden2 = nn.Linear(50, 50)
+        self.hidden3 = nn.Linear(50, 50)
+        self.hidden4 = nn.Linear(50, 50)
+        self.output = nn.Linear(50, 15)
+    
+    def forward(self, x):
+        x = F.relu(self.hidden1(x))
+        x = F.relu(self.hidden2(x))
+        x = F.relu(self.hidden3(x))
+        x = F.relu(self.hidden4(x))
+        x = self.output(x)
+        return x
+
 
 # 定義訓練函數
 def train(net, trainloader, epochs):
@@ -153,7 +185,8 @@ def test(net, testloader, start_time, client_str,plot_confusion_matrix):
             # 將每個類別的召回率寫入 "recall-baseline.csv" 檔案
             RecordRecall = ()
             RecordAccuracy = ()
-            labelCount = 15
+            # labelCount = 15
+            labelCount = 5
            
             for i in range(labelCount):
                 RecordRecall = RecordRecall + (acc[str(i)]['recall'],)
@@ -196,7 +229,8 @@ def draw_confusion_matrix(y_true, y_pred, plot_confusion_matrix = False):
         # class_names：類別標籤的清單，通常是一個包含每個類別名稱的字串清單。這將用作 Pandas 資料幀的行索引和列索引，以標識混淆矩陣中每個類別的位置。
         # class_names：同樣的類別標籤的清單，它作為列索引的標籤，這是可選的，如果不提供這個參數，將使用行索引的標籤作為列索引
         arr = confusion_matrix(y_true, y_pred)
-        class_names = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14']
+        # class_names = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14']
+        class_names = ['0', '1', '2', '3', '4']
         df_cm = pd.DataFrame(arr, class_names, class_names)
         plt.figure(figsize = (9,6))
         sns.heatmap(df_cm, annot=True, fmt="d", cmap='BuGn')
