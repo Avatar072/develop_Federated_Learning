@@ -169,12 +169,6 @@ print(len(train_dataframes))
 print(type(train_dataframes))
 print(len(test_dataframes))
 
-x_train = np.array(train_dataframes.iloc[:,:-1])
-y_train = np.array(train_dataframes.iloc[:,-1])
-
-x_test = np.array(test_dataframes.iloc[:,:-1])
-y_test = np.array(test_dataframes.iloc[:,-1])
-
 # 分別取出Label等於8、9、13、14的數據
 # 先取消做14
 label_8_data = data1[data1['Label'] == 8]
@@ -198,14 +192,22 @@ train_dataframes = pd.concat([train_dataframes,train_label_8, train_label_9,trai
 
 label_counts = test_dataframes['Label'].value_counts()
 print("test_dataframes\n", label_counts)
+print("test_dataframes\n", test_dataframes.shape)
 label_counts = train_dataframes['Label'].value_counts()
 print("train_dataframes\n", label_counts)
+print("train_dataframes\n", train_dataframes.shape)
 
 SaveDataToCsvfile(train_dataframes, f"./data/After_PCA/{today}", f"train_dataframes_{today}")
 SaveDataToCsvfile(test_dataframes, f"./data/After_PCA/{today}", f"test_dataframes_{today}")
+
+x_train = np.array(train_dataframes.iloc[:,:-1])
+y_train = np.array(train_dataframes.iloc[:,-1])
+
+x_test = np.array(test_dataframes.iloc[:,:-1])
+y_test = np.array(test_dataframes.iloc[:,-1])
 
 np.save(f'./data/After_PCA/{today}/x_train_1', x_train)
 np.save(f'./data/After_PCA/{today}/x_test_1', x_test)
 np.save(f'./data/After_PCA/{today}/y_train_1', y_train)
 np.save(f'./data/After_PCA/{today}/y_test_1', y_test)
-# print("---------Finished PCA n txt save--------\n")
+print("---------Finished PCA n txt save--------\n")
