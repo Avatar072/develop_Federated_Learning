@@ -53,23 +53,30 @@ train_dataframes, test_dataframes = train_test_split(mergecompelete_dataset, tes
 
 
 # 分別取出Label等於8、9、13、14的數據
+# 先取消做14
 label_8_data = mergecompelete_dataset[mergecompelete_dataset['Label'] == 8]
 label_9_data = mergecompelete_dataset[mergecompelete_dataset['Label'] == 9]
 label_13_data = mergecompelete_dataset[mergecompelete_dataset['Label'] == 13]
-label_14_data = mergecompelete_dataset[mergecompelete_dataset['Label'] == 14]
+# label_14_data = mergecompelete_dataset[mergecompelete_dataset['Label'] == 14]
 
 # 使用train_test_split分別劃分取Label相等8、9、13、14的數據
 train_label_8, test_label_8 = train_test_split(label_8_data, test_size=0.4, random_state=42)
 train_label_9, test_label_9 = train_test_split(label_9_data, test_size=0.5, random_state=42)
 train_label_13, test_label_13 = train_test_split(label_13_data, test_size=0.5, random_state=42)
-train_label_14, test_label_14 = train_test_split(label_14_data, test_size=0.5, random_state=42)
+# train_label_14, test_label_14 = train_test_split(label_14_data, test_size=0.5, random_state=42)
 
 # 刪除Label相當於8、9、13、14的行
-test_dataframes = test_dataframes[~test_dataframes['Label'].isin([8, 9,13, 14])]
-train_dataframes = train_dataframes[~train_dataframes['Label'].isin([8, 9,13,14])]
+# test_dataframes = test_dataframes[~test_dataframes['Label'].isin([8, 9,13, 14])]
+# train_dataframes = train_dataframes[~train_dataframes['Label'].isin([8, 9,13,14])]
+#  刪除Label相當於8、9、13的行 先取消做14
+test_dataframes = test_dataframes[~test_dataframes['Label'].isin([8, 9,13])]
+train_dataframes = train_dataframes[~train_dataframes['Label'].isin([8, 9,13])]
 # 合併Label8、9、13、14回去
-test_dataframes = pd.concat([test_dataframes, test_label_8, test_label_9, test_label_13, test_label_14])
-train_dataframes = pd.concat([train_dataframes,train_label_8, train_label_9,train_label_13,train_label_14])
+# test_dataframes = pd.concat([test_dataframes, test_label_8, test_label_9, test_label_13, test_label_14])
+# train_dataframes = pd.concat([train_dataframes,train_label_8, train_label_9,train_label_13,train_label_14])
+# 合併Label8、9、13回去 先取消做14
+test_dataframes = pd.concat([test_dataframes, test_label_8, test_label_9, test_label_13])
+train_dataframes = pd.concat([train_dataframes,train_label_8, train_label_9,train_label_13])
 
 label_counts = test_dataframes['Label'].value_counts()
 print("test_dataframes\n", label_counts)

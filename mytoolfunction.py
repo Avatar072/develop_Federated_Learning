@@ -148,8 +148,12 @@ def ChooseTrainDatastes(filepath, my_command):
         # train_dataframe = pd.read_csv(os.path.join(filepath, 'data', 'train_dataframes_respilt.csv'))
         # x_train = np.array(train_dataframe.iloc[:, :-1])
         # y_train = np.array(train_dataframe.iloc[:, -1])
-        x_train = np.load(filepath + "x_total_train.npy", allow_pickle=True)
-        y_train = np.load(filepath + "y_total_train.npy", allow_pickle=True)
+        # x_train = np.load(filepath + "x_total_train.npy", allow_pickle=True)
+        # y_train = np.load(filepath + "y_total_train.npy", allow_pickle=True)
+        # x_train = np.load(filepath + "x_total_train_20231102.npy", allow_pickle=True)
+        # y_train = np.load(filepath + "y_total_train_20231102.npy", allow_pickle=True)
+        x_train = np.load(filepath + "x_train_onlyThursday_20231102.npy", allow_pickle=True)
+        y_train = np.load(filepath + "y_train_onlyThursday_20231102.npy", allow_pickle=True)
         client_str = "Local"
 
     elif my_command == 'train_half1':
@@ -198,11 +202,18 @@ def ChooseLoadNpArray(filepath, file, Choose_method):
         if (Choose_method == 'normal'):
             #  x_train = np.load(filepath + "x_total_train.npy", allow_pickle=True)
             #  y_train = np.load(filepath + "y_total_train.npy", allow_pickle=True)
-            x_train = np.load(filepath + "x_total_train_20231101.npy", allow_pickle=True)
-            y_train = np.load(filepath + "y_total_train_20231101.npy", allow_pickle=True)
+            # x_train = np.load(filepath + "x_total_train_20231102.npy", allow_pickle=True)
+            # y_train = np.load(filepath + "y_total_train_20231102.npy", allow_pickle=True)
+            # x_train = np.load(filepath + "x_train_onlyThursday_20231102.npy", allow_pickle=True)
+            # y_train = np.load(filepath + "y_train_onlyThursday_20231102.npy", allow_pickle=True)
+            x_train = np.load(filepath + "x_train_1.npy", allow_pickle=True)
+            y_train = np.load(filepath + "y_train_1.npy", allow_pickle=True)
         elif (Choose_method == 'SMOTE'):
-            x_train = np.load(filepath + "x_total_train_SMOTE_ALL_Label.npy", allow_pickle=True)
-            y_train = np.load(filepath + "y_total_train_SMOTE_ALL_Label.npy", allow_pickle=True)
+            # x_train = np.load(filepath + "x_total_train_SMOTE_ALL_Label.npy", allow_pickle=True)
+            # y_train = np.load(filepath + "y_total_train_SMOTE_ALL_Label.npy", allow_pickle=True)
+            x_train = np.load(filepath + "x_total_train_SMOTE_ALL_Label14.npy", allow_pickle=True)
+            y_train = np.load(filepath + "y_total_train_SMOTE_ALL_Label14.npy", allow_pickle=True)
+            
         elif (Choose_method == 'GAN'):
             # x_train = np.load(filepath + "x_total_train.npy", allow_pickle=True)
             # y_train = np.load(filepath + "y_total_train.npy", allow_pickle=True)
