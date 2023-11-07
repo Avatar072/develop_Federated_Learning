@@ -45,15 +45,19 @@ for again in range(again_epoch):
 
     class_nums = [0,1,2,3,4,5]
     max_epoch = 500
-
+    filepath = "D:\\Labtest20230911\\"
     # x_train = np.loadtxt("dataset/pca_70_x_train.txt")
     # y_train = np.loadtxt("dataset/pca_70_y_train.txt")
     # x_test = np.loadtxt("dataset/pca_70_x_test.txt")
     # y_test = np.loadtxt("dataset/pca_70_y_test.txt")
-    x_train = np.loadtxt("Thursday_x_train.txt")
-    y_train = np.loadtxt("Thursday_y_train.txt")
-    x_test = np.loadtxt("Thursday_x_test.txt")
-    y_test = np.loadtxt("Thursday_y_test.txt")
+    # x_train = np.loadtxt("Thursday_x_train.txt")
+    # y_train = np.loadtxt("Thursday_y_train.txt")
+    # x_test = np.loadtxt("Thursday_x_test.txt")
+    # y_test = np.loadtxt("Thursday_y_test.txt")
+    x_train = np.load(filepath + "x_train_1.npy", allow_pickle=True)
+    y_train = np.load(filepath + "y_train_1.npy", allow_pickle=True)
+    x_test = np.load(filepath + "x_test_1.npy", allow_pickle=True)
+    y_test = np.load(filepath + "y_test_1.npy", allow_pickle=True)
     print(x_train.shape)
     print(x_test.shape)
     print(y_train.shape)
@@ -296,7 +300,7 @@ for again in range(again_epoch):
         """
         def __init__(self):
             super(DiscriminatorNet, self).__init__()
-            n_features = 84 # 41-9
+            n_features = 58 # 41-9
             n_out = 1
             
             
@@ -362,7 +366,7 @@ for again in range(again_epoch):
             self.fc3 = nn.Linear(24, 24)
             #self.bn3 = nn.BatchNorm1d(24)  # BN 3
             # self.d3 = nn.Dropout(0.2)
-            self.fc4 = nn.Linear(24, 84)
+            self.fc4 = nn.Linear(24, 58)
             #elf.d4 = nn.Dropout(0.2)
             #self.fc5 = nn.Linear(24, 24)
             #self.d5 = nn.Dropout(0.2)
@@ -469,7 +473,7 @@ for again in range(again_epoch):
     #list_D = np.empty((24,200))
 
 
-    weakpoint = 1 # 類別2
+    weakpoint = 14 # 類別2
     print("The weak label is: " + str(weakpoint))
         
 
@@ -484,6 +488,7 @@ for again in range(again_epoch):
     y_g = y_g[y_train==weakpoint]
     y_g = np.random.uniform(0.9, 1, y_g.shape) # 軟標籤 0.9~1
     #y_g = np.ones(y_g.shape) #硬標籤
+
     print(y_g)
     print(y_g.shape)
     print(type(y_g))
