@@ -59,9 +59,9 @@ print(client_str)
 
 counter = Counter(y_train)
 print(counter)
-
+startimeStamp, starttime= getStartorEndtime("start")
 ########################  Weak labels and numOfSamples ##############################
-numOfSamples = 1500
+numOfSamples = 628
 # #############################################################################
 again_epoch = 100                                                   ######################################################## 0628修改 ###############################################
 for again in range(again_epoch): 
@@ -219,6 +219,24 @@ for again in range(again_epoch):
             x = self.fc4(x)
             return x
             
+        ############  Generating and adding new samples  ###########
+    # numOfSamples 表示生成的假資料的數量，用(generator) 生成的假特徵數據
+    def Generatenewsamples(convergence_judge_method):
+        x_syn=(generator(noise(numOfSamples))).detach().to(device).cpu().numpy() 
+        # 將y_syn設定為一個具有相同形狀的numOfSamples的數組，並將每個元素設為weakpoint。這裡，weakpoint是生成假數據的標籤
+        # numOfSamples是50，並將它們的標籤都設置為weakpoint，即8。因此，生成標籤都是8的50個假樣本
+        y_syn=np.ones(numOfSamples)*weakLabel #這是與 x_syn 相關的標籤（labels）。在這裡，所有這些假數據的標籤都被設置為 weakpoint
+
+        # #保存透過GAN生出來的資料
+        # # mergeDataFrameAndSaveToCsv("GAN", x_syn, y_syn, file, weakLabel, num_epochs)
+        df_x_train = pd.DataFrame(x_syn)
+        df_y_train = pd.DataFrame(y_syn)
+
+        # 使用concat函数将它们合并
+        generateNewdata = pd.concat([df_x_train, df_y_train], axis=1)
+        generateNewdata.to_csv(filepath + "data\\After_GAN\\"+ today + f"\\{convergence_judge_method}_GAN_Label_{weakLabel}_{epoch}.csv", index=False)
+        print("透過GAN生成出來的資料Shapes: ")#顯示 (資料筆數, 特徵數)。
+        print(x_syn.shape,y_syn.shape)#顯示 (資料筆數,)，因為這是一維的標籤數組
 
     # training discriminator 
     def train_discriminator(optimizer, real_data, fake_data, y_real):
@@ -326,14 +344,14 @@ for again in range(again_epoch):
     loss = nn.BCELoss().cuda()  # loss function使用cuda
     ###########################################################
     #*********************************************  Running GAN   ***************************
-            
+    start1 = time.time()
+
     d_errs=[]
     g_errs=[]
     accuracy=[]  #計算鑑別器準確率(訓練生成器過程)
     D_real_accuracy = [] #計算鑑別器真實資料之準確率(訓練鑑別器過程)
     D_fake_accuracy = [] #計算鑑別器生成資料之誤判率(訓練鑑別器過程)
     D_combine_accuracy = [] #計算鑑別器總準確率(訓練鑑別器過程)
-    startimeStamp, starttime= getStartorEndtime("start")
     # print("data_loader",len(data_loader))
     for epoch in range(num_epochs):
         t = 0 #
@@ -432,36 +450,78 @@ for again in range(again_epoch):
         d_errs.append(d_sum) #一次epoch append一次
         g_errs.append(g_sum) 
 
+        if (sum_acc < sum_D_training_fake_acc) and epoch<100:                                          ######################################################## 0628修改 ###############################################
+            break
+        if sum_D_combine_acc < 0.6 and sum_D_combine_acc > 0.4:
+            patient += 1
+        else:
+            patient = 0
+        if patient == 1000:
+            print("這是收斂點: ", epoch+1)
+            print("-----儲存模型-----")
+            Gfile_name =  f"./data/After_GAN/{today}/" + "thousand_Cpoint_Generator_" + str(epoch+1) + ".pth"
+            Generatenewsamples("thousand_Cpoint_Generator")
+            torch.save(generator, Gfile_name)
+            patient = 0
 
-    ############  Generating and adding new samples  ###########
-    # numOfSamples 表示生成的假資料的數量，用(generator) 生成的假特徵數據
-    x_syn=(generator(noise(numOfSamples))).detach().to(device).cpu().numpy() 
-    # 將y_syn設定為一個具有相同形狀的numOfSamples的數組，並將每個元素設為weakpoint。這裡，weakpoint是生成假數據的標籤
-    # numOfSamples是50，並將它們的標籤都設置為weakpoint，即8。因此，生成標籤都是8的50個假樣本
-    y_syn=np.ones(numOfSamples)*weakLabel #這是與 x_syn 相關的標籤（labels）。在這裡，所有這些假數據的標籤都被設置為 weakpoint
+        if sum_D_combine_acc < 0.6 and sum_D_combine_acc > 0.4:
+            patient2 += 1
+        else:
+            patient2 = 0
+        if patient2 == 100 and epoch >= 2000:
+            end1 = time.time()
+            a = a =(end1 - start1)
+            with open(f"./data/After_GAN/{today}/GAN_train_sec.txt","a+") as f:
+                f.writelines(str(a))
+                f.writelines("\n")
+            print("這是收斂點: ", epoch+1)
+            print("-----儲存模型-----")
+            Gfile_name =  f"./data/After_GAN/{today}/" + "hundred_Cpoint_Generator_" + str(epoch+1) + ".pth"
+            Generatenewsamples("hundred_Cpoint_Generator")
+            torch.save(generator, Gfile_name)
+            patient2 = 0
+            end_loop = 0
+            with open(f"./data/After_GAN/{today}/end_loop.txt","a") as f:
+                f.writelines(str(end_loop))
 
-    # #保存透過GAN生出來的資料
-    # # mergeDataFrameAndSaveToCsv("GAN", x_syn, y_syn, file, weakLabel, num_epochs)
-    df_x_train = pd.DataFrame(x_syn)
-    df_y_train = pd.DataFrame(y_syn)
 
-    # 使用concat函数将它们合并
-    generateNewdata = pd.concat([df_x_train, df_y_train], axis=1)
-    generateNewdata.to_csv(filepath + "data\\After_GAN\\"+ today + f"\\GAN_Label_{weakLabel}.csv", index=False)
-    print("透過GAN生成出來的資料Shapes: ")#顯示 (資料筆數, 特徵數)。
-    print(x_syn.shape,y_syn.shape)#顯示 (資料筆數,)，因為這是一維的標籤數組
+     ######  以G_loss, D_loss收斂  ########
+        if epoch == 0:
+            tmp_loss = abs(g_sum - d_sum) #取絕對值
+            last_loss = round(tmp_loss.item(),4)
+            tmp_g = g_sum
+            tmp_d = d_sum
+        else:
+            tmp_loss = abs(g_sum - d_sum)
+            tmp_loss = round(tmp_loss.item(),4)
+            
+            if abs(tmp_g - g_sum) < 0.05 and abs(tmp_d - d_sum) < 0.05:
+                #if tmp_loss == last_loss:
+                if abs(tmp_loss - last_loss) <= 0.005: #相鄰兩次loss值相差正負0.0005
+                    loss_patient += 1
+                    last_loss = tmp_loss
+                else:
+                    loss_patient = 0
+                    last_loss = tmp_loss
+                #print("Epoch " + str(epoch) + " : " + str(last_loss))
+                if loss_patient == 200:
+                    Gfile_name = f"./data/After_GAN/{today}/" + "Loss_Generator_" + str(epoch) + ".pth"
+                    print("Epoch: " + str(epoch))
+                    Generatenewsamples("Loss_Generator")
+                    torch.save(generator, Gfile_name)
+                    loss_patient = 0
+            else:
+                loss_patient = 0
+        
 
-    endtimeStamp,endtime = getStartorEndtime("end")
+
+    
     test_range = np.arange(len(d_errs))
     print(test_range)
-    print(d_errs)
-    print(g_errs)
-    # d_errs = d_errs.cpu()
-    # d_errs = d_errs.detach().numpy()
     d_errs_cpu = [item.cpu().detach().numpy() for item in d_errs]
     g_errs_cpu = [item.cpu().detach().numpy() for item in g_errs]
-    print(d_errs_cpu)
     # Print_smooth_loss(d_errs_cpu, g_errs_cpu, weakLabel, epoch)
+endtimeStamp,endtime = getStartorEndtime("end")
 # 繪製兩個損失曲線
 plt.figure(figsize=(10, 5))
 plt.plot(test_range, d_errs_cpu, label="Discriminator Loss", color='blue')
@@ -477,7 +537,7 @@ plt.legend() #作用是將圖例添加到當前的繪圖中
 plt.grid(True)
 # 儲存圖片並顯示
 plt.savefig(f"./data/After_GAN/{today}/epochs_{num_epochs}_weaklabel_{weakLabel}_Loss.png")
-plt.show()
+# plt.show()
 
 CalculateTime(endtimeStamp, startimeStamp)
 print("start time",starttime)
