@@ -152,8 +152,10 @@ def ChooseTrainDatastes(filepath, my_command):
         # y_train = np.load(filepath + "y_total_train.npy", allow_pickle=True)
         # x_train = np.load(filepath + "x_total_train_20231102.npy", allow_pickle=True)
         # y_train = np.load(filepath + "y_total_train_20231102.npy", allow_pickle=True)
-        x_train = np.load(filepath + "x_train_onlyThursday_20231102.npy", allow_pickle=True)
-        y_train = np.load(filepath + "y_train_onlyThursday_20231102.npy", allow_pickle=True)
+        # x_train = np.load(filepath + "x_train_onlyThursday_20231102.npy", allow_pickle=True)
+        # y_train = np.load(filepath + "y_train_onlyThursday_20231102.npy", allow_pickle=True)
+        x_train = np.load(filepath + "x_train_1.npy", allow_pickle=True)
+        y_train = np.load(filepath + "y_train_1.npy", allow_pickle=True)
         client_str = "Local"
 
     elif my_command == 'train_half1':
@@ -185,14 +187,14 @@ def ChooseTestDataSet(filepath):
     return x_test, y_test
 
 ### sava dataframe to np array 
-def SaveDataframeTonpArray(dataframe, df_name, filename):
+def SaveDataframeTonpArray(dataframe, filepath ,df_name, filename):
     #選擇了最后一列Lable之外的所有列，即選擇所有feature
     x = np.array(dataframe.iloc[:,:-1])
     y = np.array(dataframe.iloc[:,-1])
 
     #np.save
-    np.save(f"x_{df_name}_{filename}.npy", x)
-    np.save(f"y_{df_name}_{filename}.npy", y)
+    np.save(f"{filepath}\\x_{df_name}_{filename}.npy", x)
+    np.save(f"{filepath}\\y_{df_name}_{filename}.npy", y)
 
 ### Choose Load np array
 def ChooseLoadNpArray(filepath, file, Choose_method):
@@ -217,8 +219,12 @@ def ChooseLoadNpArray(filepath, file, Choose_method):
         elif (Choose_method == 'GAN'):
             # x_train = np.load(filepath + "x_total_train.npy", allow_pickle=True)
             # y_train = np.load(filepath + "y_total_train.npy", allow_pickle=True)
-            x_train = np.load(filepath + "x_GAN_data_total_train_weakpoint_14.npy", allow_pickle=True)
-            y_train = np.load(filepath + "y_GAN_data_total_train_weakpoint_14.npy", allow_pickle=True)
+            # x_train = np.load(filepath + "x_GAN_data_total_train_weakpoint_14.npy", allow_pickle=True)
+            # y_train = np.load(filepath + "y_GAN_data_total_train_weakpoint_14.npy", allow_pickle=True)
+            x_train = np.load(filepath + "x_train_20231106_afterGAN_Label14.npy", allow_pickle=True)
+            # 將複數的資料實部保留並轉換為浮點：
+            x_train = x_train.real.astype(np.float64)
+            y_train = np.load(filepath + "y_train_20231106_afterGAN_Label14.npy", allow_pickle=True)
         
         client_str = "BaseLine"
         print(Choose_method)
