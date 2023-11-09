@@ -27,6 +27,7 @@ generatefolder(filepath + "\\dataset_AfterProcessed\\", today)
 def writeData(file_path):
     # 读取CSV文件并返回DataFrame
     df = pd.read_csv(file_path,encoding='cp1252',low_memory=False)
+    # df = pd.read_csv(file_path)
     return df
 
 ### merge多個DataFrame
@@ -96,39 +97,33 @@ def ChecktotalCsvFileIsexists(file):
 
 
 ### label encoding
-# def label_Encoding(label):
-#     label_encoder = preprocessing.LabelEncoder()
-#     mergecompelete_dataset[label] = label_encoder.fit_transform(mergecompelete_dataset[label])
-#     mergecompelete_dataset[label].unique()
+def label_Encoding(label):
+    label_encoder = preprocessing.LabelEncoder()
+    mergecompelete_dataset[label] = label_encoder.fit_transform(mergecompelete_dataset[label])
+    mergecompelete_dataset[label].unique()
 
 ### do Label Encoding
-def DoLabelEncoding(df):
-    #將 Source IP、Source Port、Destination IP、Destination Port、Timestamp 等特徵做 one-hot 形式轉換
-    # Flow ID	 Source IP	 Source Port	 Destination IP	 Destination Port	 Protocol	 Timestamp
-    df['FlowID'] = df['FlowID'].str.strip()
-    df = df.drop('FlowID', axis=1)
-    df['Label'] = df['Label'].str.strip()
-    df['SourceIP'] = df['SourceIP'].str.strip()
-    df['SourcePort'] = df['SourcePort'].str.strip()
-    df['DestinationIP'] = df['DestinationIP'].str.strip()
-    df['Protocol'] = df['Protocol'].str.strip()
-    df['Timestamp'] = df['Timestamp'].str.strip()
-    label_Encoding('Label',df)
-    label_Encoding('SourceIP',df)
-    label_Encoding('SourcePort',df)
-    label_Encoding('DestinationIP',df)
-    label_Encoding('DestinationPort',df)
-    label_Encoding('Protocol',df)
-    label_Encoding('Timestamp',df)
+# def DoLabelEncoding(df):
+#     #將 Source IP、Source Port、Destination IP、Destination Port、Timestamp 等特徵做 one-hot 形式轉換
+#     # Flow ID	 Source IP	 Source Port	 Destination IP	 Destination Port	 Protocol	 Timestamp
+#     df = df.drop('FlowID', axis=1)
+#     label_Encoding('Label',df)
+#     label_Encoding('SourceIP',df)
+#     label_Encoding('SourcePort',df)
+#     label_Encoding('DestinationIP',df)
+#     label_Encoding('DestinationPort',df)
+#     label_Encoding('Protocol',df)
+#     label_Encoding('Timestamp',df)
     # 保存編碼后的 DataFrame 回到 CSV 文件
-    df.to_csv(filepath + "\\dataset_AfterProcessed\\total_encoded.csv", index=False)
-    return df
+    # df.to_csv(filepath + "\\dataset_AfterProcessed\\total_encoded.csv", index=False)
+    # return df
     
 ### label Encoding And Replace the number of greater than 10,000
 def ReplaceMorethanTenthousandQuantity(df):
   
     # 超過提取10000行的只取10000，其餘保留 
-    df = pd.read_csv(filepath + "\\dataset_AfterProcessed\\total_encoded.csv")
+    # df = pd.read_csv(filepath + "\\dataset_AfterProcessed\\total_encoded.csv")
+    df = pd.read_csv(filepath + "\\dataset_AfterProcessed\\total_original.csv")
     # 获取每个标签的出现次数
     label_counts = df['Label'].value_counts()
     # 打印提取后的DataFrame
@@ -152,37 +147,71 @@ def ReplaceMorethanTenthousandQuantity(df):
         extracted_df = pd.concat([extracted_df, label_df])
 
     # 将更新后的DataFrame保存到文件
-    SaveDataToCsvfile(extracted_df, "./data/dataset_AfterProcessed","total_encoded_updated_10000")
+    # SaveDataToCsvfile(extracted_df, "./data/dataset_AfterProcessed","total_encoded_updated_10000")
 
     # 打印修改后的结果
     print(extracted_df['Label'].value_counts())
+    return extracted_df
 
 
 # CheckCsvFileIsexists檢查file存不存在，若file不存在產生新檔
 ChecktotalCsvFileIsexists(filepath + "\\dataset_AfterProcessed\\total_original.csv")
 # Loading datasets after megre complete
 mergecompelete_dataset = pd.read_csv(filepath + "\\dataset_AfterProcessed\\total_original.csv")
-mergecompelete_dataset = DoLabelEncoding(mergecompelete_dataset)
-ReplaceMorethanTenthousandQuantity(mergecompelete_dataset)
-# Loading datasets after label_Encoding
+# DoLabelEncoding(mergecompelete_dataset)
+mergecompelete_dataset = ReplaceMorethanTenthousandQuantity(mergecompelete_dataset)
+mergecompelete_dataset = mergecompelete_dataset.drop('FlowID', axis=1)
+label_Encoding('SourceIP')
+label_Encoding('SourcePort')
+label_Encoding('DestinationIP')
+label_Encoding('DestinationPort')
+label_Encoding('Protocol')
+label_Encoding('Timestamp')
+label_Encoding('Label')
+mergecompelete_dataset.to_csv(filepath + "\\dataset_AfterProcessed\\total_encoded_updated_10000.csv", index=False)
 mergecompelete_dataset = pd.read_csv(filepath + "\\dataset_AfterProcessed\\total_encoded_updated_10000.csv")
 
+
 ### extracting features
-mergecompelete_dataset=mergecompelete_dataset.iloc[:,:-1]
+#除了Label外的特徵
+crop_dataset=mergecompelete_dataset.iloc[:,:-1]
 # 列出要排除的列名
 columns_to_exclude = ['SourceIP', 'SourcePort', 'DestinationIP', 'DestinationPort', 'Protocol', 'Timestamp']
 # 使用条件选择不等于这些列名的列
-mergecompelete_dataset = mergecompelete_dataset[[col for col in mergecompelete_dataset.columns if col not in columns_to_exclude]]
-mergecompelete_dataset=mergecompelete_dataset.values
-# scaler = preprocessing.StandardScaler()# 資料標準化
-scaler = MinMaxScaler(feature_range=(0, 1)).fit(mergecompelete_dataset)
-scaler.fit(mergecompelete_dataset)
-mergecompelete_dataset=scaler.transform(mergecompelete_dataset)
-# 保留MinMaxScaler後的結果
-SaveDataToCsvfile(mergecompelete_dataset, "./data/dataset_AfterProcessed","total_encoded_updated_10000")
+doScalerdataset = crop_dataset[[col for col in crop_dataset.columns if col not in columns_to_exclude]]
+undoScalerdataset = crop_dataset[[col for col in crop_dataset.columns if col  in columns_to_exclude]]
+# print(doScalerdataset.info)
+# print(mergecompelete_dataset.info)
+# print(undoScalerdataset.info)
+X=doScalerdataset
+X=X.values
+# scaler = preprocessing.StandardScaler() #資料標準化
+scaler = MinMaxScaler(feature_range=(0, 1)).fit(X)
+scaler.fit(X)
+X=scaler.transform(X)
 
-# ### Do PCA
-# number_of_components=78 # 改成跟資料集feature一樣
+
+## 重新合並MinMax後的特徵
+number_of_components=77 # 原84個的特徵，扣掉'SourceIP', 'SourcePort', 'DestinationIP', 'DestinationPort', 'Protocol', 'Timestamp' 'Label' | 84-7 =77
+columns_array=[]
+for i in range (number_of_components):
+    columns_array.append("principal_Component"+str(i+1))
+    
+principalComponents = X
+principalDf = pd.DataFrame(data = principalComponents
+              , columns = columns_array)
+
+finalDf = pd.concat([undoScalerdataset,principalDf, mergecompelete_dataset[['Label']]], axis = 1)
+print(finalDf)
+mergecompelete_dataset=finalDf
+
+
+
+# 保留MinMaxScaler後的結果
+SaveDataToCsvfile(mergecompelete_dataset, "./data/dataset_AfterProcessed","total_encoded_updated_10000_After_minmax")
+
+# ## Do PCA
+# number_of_components=78 # 原84個的特徵，扣掉'SourceIP', 'SourcePort', 'DestinationIP', 'DestinationPort', 'Protocol', 'Timestamp' 'Label' | 84-6 =78
 # pca = PCA(n_components=number_of_components)
 # columns_array=[]
 # for i in range (number_of_components):
