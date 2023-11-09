@@ -28,6 +28,8 @@ def writeData(file_path):
     # 读取CSV文件并返回DataFrame
     df = pd.read_csv(file_path,encoding='cp1252',low_memory=False)
     # df = pd.read_csv(file_path)
+    # 找到不包含NaN、Infinity和"inf"值的行
+    df = df[~df.isin([np.nan, np.inf, -np.inf]).any(1)]
     return df
 
 ### merge多個DataFrame
@@ -80,7 +82,7 @@ def ChecktotalCsvFileIsexists(file):
         # data = mergeData("D:\\Labtest20230911\\data\\MachineLearningCVE")
         data = mergeData(filepath + "\\TrafficLabelling")#完整的資料
         
-        data = clearDirtyData(data)
+        # data = clearDirtyData(data)
        
         if data is not None:
             # 去除特征名中的空白和小于ASCII 32的字符

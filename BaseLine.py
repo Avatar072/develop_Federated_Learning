@@ -51,8 +51,8 @@ generatefolder(f"./single_AnalyseReportFolder/{today}/{client_str}/", Choose_met
 # y_test = np.load(filepath + "y_test_20231102.npy", allow_pickle=True)
 # x_test = np.load(filepath + "x_test_onlyThursday_20231102.npy", allow_pickle=True)
 # y_test = np.load(filepath + "y_test_onlyThursday_20231102.npy", allow_pickle=True)
-x_test = np.load(filepath + "x_test_1.npy", allow_pickle=True)
-y_test = np.load(filepath + "y_test_1.npy", allow_pickle=True)
+x_test = np.load(filepath + "x_test_20231109.npy", allow_pickle=True)
+y_test = np.load(filepath + "y_test_20231109.npy", allow_pickle=True)
 
 x_train = torch.from_numpy(x_train).type(torch.FloatTensor)
 y_train = torch.from_numpy(y_train).type(torch.LongTensor)
@@ -81,22 +81,6 @@ y_test = y_test.to(DEVICE)
 #         x = F.relu(self.fc3(x))
 #         x = self.fc4(x)
 #         return x
-# class MLP(nn.Module):
-#     def __init__(self):
-#         super(MLP, self).__init__()
-#         self.layer1 = nn.Linear(x_train.shape[1], 512)
-#         self.fc2 = nn.Linear(512, 512)
-#         self.fc3 = nn.Linear(512, 512)
-#         self.fc4 = nn.Linear(512, 512)
-#         self.layer5 = nn.Linear(512, 4)
-
-#     def forward(self, x):
-#         x = F.relu(self.layer1(x))
-#         x = F.relu(self.fc2(x))
-#         x = F.relu(self.fc3(x))
-#         x = F.relu(self.fc4(x))
-#         x = self.layer5(x)
-#         return x
 class MLP(nn.Module):
     def __init__(self):
         super(MLP, self).__init__()
@@ -104,21 +88,37 @@ class MLP(nn.Module):
         self.fc2 = nn.Linear(512, 512)
         self.fc3 = nn.Linear(512, 512)
         self.fc4 = nn.Linear(512, 512)
-        self.fc5 = nn.Linear(512, 512)
-        self.fc6 = nn.Linear(512, 512)
-        self.fc7 = nn.Linear(512, 512)
-        self.layer8 = nn.Linear(512, 15)
+        self.layer5 = nn.Linear(512, 15)
 
     def forward(self, x):
         x = F.relu(self.layer1(x))
         x = F.relu(self.fc2(x))
         x = F.relu(self.fc3(x))
         x = F.relu(self.fc4(x))
-        x = F.relu(self.fc5(x))
-        x = F.relu(self.fc6(x))
-        x = F.relu(self.fc7(x))
-        x = self.layer8(x)
+        x = self.layer5(x)
         return x
+# class MLP(nn.Module):
+#     def __init__(self):
+#         super(MLP, self).__init__()
+#         self.layer1 = nn.Linear(x_train.shape[1], 512)
+#         self.fc2 = nn.Linear(512, 512)
+#         self.fc3 = nn.Linear(512, 512)
+#         self.fc4 = nn.Linear(512, 512)
+#         self.fc5 = nn.Linear(512, 512)
+#         self.fc6 = nn.Linear(512, 512)
+#         self.fc7 = nn.Linear(512, 512)
+#         self.layer8 = nn.Linear(512, 15)
+
+#     def forward(self, x):
+#         x = F.relu(self.layer1(x))
+#         x = F.relu(self.fc2(x))
+#         x = F.relu(self.fc3(x))
+#         x = F.relu(self.fc4(x))
+#         x = F.relu(self.fc5(x))
+#         x = F.relu(self.fc6(x))
+#         x = F.relu(self.fc7(x))
+#         x = self.layer8(x)
+#         return x
 
 class Multiclass(nn.Module):
     def __init__(self):

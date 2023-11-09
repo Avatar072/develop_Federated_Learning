@@ -208,8 +208,10 @@ def ChooseLoadNpArray(filepath, file, Choose_method):
             # y_train = np.load(filepath + "y_total_train_20231102.npy", allow_pickle=True)
             # x_train = np.load(filepath + "x_train_onlyThursday_20231102.npy", allow_pickle=True)
             # y_train = np.load(filepath + "y_train_onlyThursday_20231102.npy", allow_pickle=True)
-            x_train = np.load(filepath + "x_train_1.npy", allow_pickle=True)
-            y_train = np.load(filepath + "y_train_1.npy", allow_pickle=True)
+            # x_train = np.load(filepath + "x_train_1.npy", allow_pickle=True)
+            # y_train = np.load(filepath + "y_train_1.npy", allow_pickle=True)
+            x_train = np.load(filepath + "x_train_20231109.npy", allow_pickle=True)
+            y_train = np.load(filepath + "y_train_20231109.npy", allow_pickle=True)
         elif (Choose_method == 'SMOTE'):
             # x_train = np.load(filepath + "x_total_train_SMOTE_ALL_Label.npy", allow_pickle=True)
             # y_train = np.load(filepath + "y_total_train_SMOTE_ALL_Label.npy", allow_pickle=True)
