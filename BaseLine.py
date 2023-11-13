@@ -15,7 +15,7 @@ warnings.filterwarnings("ignore")#https://blog.csdn.net/qq_43391414/article/deta
 from torch.utils.data import DataLoader, TensorDataset
 from tqdm import tqdm
 from sklearn.metrics import confusion_matrix
-from mytoolfunction import generatefolder, ChooseLoadNpArray,ChooseTrainDatastes, ParseCommandLineArgs
+from mytoolfunction import generatefolder, ChooseLoadNpArray,ChooseTrainDatastes, ParseCommandLineArgs,ChooseTestDataSet
 from collections import Counter
 ####################################################################################################
 
@@ -34,9 +34,11 @@ print(f"Number of epochs: {num_epochs}")
 print(f"Choose_method: {Choose_method}")
 # ChooseLoadNpArray function  return x_train、y_train 和 client_str and Choose_method
 x_train, y_train, client_str = ChooseLoadNpArray(filepath, file, Choose_method)
-print(client_str)
-# counter = Counter(y_train)
-# print(counter)
+# x_train, y_train, client_str = ChooseTrainDatastes(filepath, file, Choose_method)   
+print(y_train)
+# print(client_str)
+counter = Counter(y_train)
+print(counter)
 today = datetime.date.today()
 today = today.strftime("%Y%m%d")
 # 在single_AnalyseReportFolder產生天日期的資料夾
@@ -51,8 +53,11 @@ generatefolder(f"./single_AnalyseReportFolder/{today}/{client_str}/", Choose_met
 # y_test = np.load(filepath + "y_test_20231102.npy", allow_pickle=True)
 # x_test = np.load(filepath + "x_test_onlyThursday_20231102.npy", allow_pickle=True)
 # y_test = np.load(filepath + "y_test_onlyThursday_20231102.npy", allow_pickle=True)
-x_test = np.load(filepath + "x_test_20231109.npy", allow_pickle=True)
-y_test = np.load(filepath + "y_test_20231109.npy", allow_pickle=True)
+x_test = np.load(filepath + "x_test_20231113.npy", allow_pickle=True)
+y_test = np.load(filepath + "y_test_20231113.npy", allow_pickle=True)
+# x_test, y_test = ChooseTestDataSet(filepath)
+counter = Counter(y_test)
+print(counter)
 
 x_train = torch.from_numpy(x_train).type(torch.FloatTensor)
 y_train = torch.from_numpy(y_train).type(torch.LongTensor)

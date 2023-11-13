@@ -184,7 +184,7 @@ label_Encoding('DestinationPort')
 label_Encoding('Protocol')
 label_Encoding('Timestamp')
 label_Encoding('Label')
-# mergecompelete_dataset.to_csv(filepath + "\\dataset_AfterProcessed\\total_encoded_updated_10000.csv", index=False)
+mergecompelete_dataset.to_csv(filepath + "\\dataset_AfterProcessed\\total_encoded_updated_10000.csv", index=False)
 mergecompelete_dataset = pd.read_csv(filepath + "\\dataset_AfterProcessed\\total_encoded_updated_10000.csv")
 
 
@@ -224,33 +224,35 @@ mergecompelete_dataset=finalDf
 # SaveDataToCsvfile(mergecompelete_dataset, "./data/dataset_AfterProcessed","total_encoded_updated_10000_After_minmax")
 
 # 做one hot
-mergecompelete_dataset = OneHot_Encoding('SourceIP', mergecompelete_dataset)
-mergecompelete_dataset = OneHot_Encoding('SourcePort', mergecompelete_dataset)
-mergecompelete_dataset = OneHot_Encoding('DestinationIP', mergecompelete_dataset)
-mergecompelete_dataset = OneHot_Encoding('DestinationPort', mergecompelete_dataset)
-mergecompelete_dataset = OneHot_Encoding('Protocol', mergecompelete_dataset)
-mergecompelete_dataset = OneHot_Encoding('Timestamp', mergecompelete_dataset)
-
+# mergecompelete_dataset = OneHot_Encoding('Protocol', mergecompelete_dataset)
 # mergecompelete_dataset = OneHot_Encoding('Label', mergecompelete_dataset)
-SaveDataToCsvfile(mergecompelete_dataset, "./data/dataset_AfterProcessed","total_encoded_updated_10000_After_minmax_onehot")
+# SaveDataToCsvfile(mergecompelete_dataset, "./data/dataset_AfterProcessed","total_encoded_updated_10000_After_minmax_onehot")
 
 # split mergecompelete_dataset
 train_dataframes, test_dataframes = train_test_split(mergecompelete_dataset, test_size=0.2, random_state=42)#test_size=0.4表示将数据集分成测试集的比例为40%
 # printFeatureCountAndLabelCountInfo(train_dataframes, test_dataframes)
 
-
+###########################################################Don't do one hot mode################################################################################################
+# 要做這邊的話上面OneHot_Encoding Protocol和Label要註解掉
 # Label encode mode  分別取出Label等於8、9、13、14的數據 對半分
 train_label_8, test_label_8 = spiltweakLabelbalance(8,mergecompelete_dataset,0.4)
 train_label_9, test_label_9 = spiltweakLabelbalance(9,mergecompelete_dataset,0.5)
 train_label_13, test_label_13 = spiltweakLabelbalance(13,mergecompelete_dataset,0.5)
-train_label_14, test_label_14 = spiltweakLabelbalance(14,mergecompelete_dataset,0.5)
+# train_label_14, test_label_14 = spiltweakLabelbalance(14,mergecompelete_dataset,0.5)
 
 # # 刪除Label相當於8、9、13、14的行
-test_dataframes = test_dataframes[~test_dataframes['Label'].isin([8, 9,13, 14])]
-train_dataframes = train_dataframes[~train_dataframes['Label'].isin([8, 9,13,14])]
-# 合併Label8、9、13、14回去
-test_dataframes = pd.concat([test_dataframes, test_label_8, test_label_9, test_label_13, test_label_14])
-train_dataframes = pd.concat([train_dataframes,train_label_8, train_label_9,train_label_13,train_label_14])
+# test_dataframes = test_dataframes[~test_dataframes['Label'].isin([8, 9,13, 14])]
+# train_dataframes = train_dataframes[~train_dataframes['Label'].isin([8, 9,13,14])]
+# # 合併Label8、9、13、14回去
+# test_dataframes = pd.concat([test_dataframes, test_label_8, test_label_9, test_label_13, test_label_14])
+# train_dataframes = pd.concat([train_dataframes,train_label_8, train_label_9,train_label_13,train_label_14])
+
+# # 刪除Label相當於8、9、13的行
+test_dataframes = test_dataframes[~test_dataframes['Label'].isin([8, 9,13])]
+train_dataframes = train_dataframes[~train_dataframes['Label'].isin([8, 9,13])]
+# 合併Label8、9、13回去
+test_dataframes = pd.concat([test_dataframes, test_label_8, test_label_9, test_label_13])
+train_dataframes = pd.concat([train_dataframes,train_label_8, train_label_9,train_label_13])
 
 label_counts = test_dataframes['Label'].value_counts()
 print("test_dataframes\n", label_counts)
@@ -278,8 +280,9 @@ SaveDataframeTonpArray(test_dataframes, f"./data/dataset_AfterProcessed/{today}"
 SaveDataframeTonpArray(train_dataframes, f"./data/dataset_AfterProcessed/{today}", "train",today)
 SaveDataframeTonpArray(train_half1, f"./data/dataset_AfterProcessed/{today}", "train_half1", today)
 SaveDataframeTonpArray(train_half2, f"./data/dataset_AfterProcessed/{today}", "train_half2", today)
+
 ###########################################################one hot mode################################################################################################
-# one hot mode 分別取出Label等於8、9、13的數據 對半分
+# # one hot mode 分別取出Label等於8、9、13的數據 對半分
 # def ifspiltweakLabelbalance_AfterOneHot(test_dataframes,train_dataframes):
 #     test_label_8,train_label_8 = spiltweakLabelbalance_afterOnehot('Label_8',mergecompelete_dataset,0.5)
 #     test_label_9,train_label_9  = spiltweakLabelbalance_afterOnehot('Label_9',mergecompelete_dataset,0.5)

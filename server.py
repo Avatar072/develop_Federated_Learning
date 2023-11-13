@@ -9,7 +9,7 @@ try:
 except:
     global_round
 
-
+#python server.py 5 5是gobal round數
 # Define metric aggregation function
 def weighted_average(metrics: List[Tuple[int, Metrics]]) -> Metrics:
     # Multiply accuracy of each client by number of examples used

@@ -141,77 +141,78 @@ def ParseCommandLineArgs(commands):
 # print(ParseCommandLineArgs(['dataset', 'epochs']))
 # print(ParseCommandLineArgs(['dataset', 'epochs', 'label']))
 
-def ChooseTrainDatastes(filepath, my_command):
-    # 加载选择的数据集
-    if my_command == 'total_train':
-        # print("Training with total_train")
-        # train_dataframe = pd.read_csv(os.path.join(filepath, 'data', 'train_dataframes_respilt.csv'))
-        # x_train = np.array(train_dataframe.iloc[:, :-1])
-        # y_train = np.array(train_dataframe.iloc[:, -1])
-        # x_train = np.load(filepath + "x_total_train.npy", allow_pickle=True)
-        # y_train = np.load(filepath + "y_total_train.npy", allow_pickle=True)
-        # x_train = np.load(filepath + "x_total_train_20231102.npy", allow_pickle=True)
-        # y_train = np.load(filepath + "y_total_train_20231102.npy", allow_pickle=True)
-        # x_train = np.load(filepath + "x_train_onlyThursday_20231102.npy", allow_pickle=True)
-        # y_train = np.load(filepath + "y_train_onlyThursday_20231102.npy", allow_pickle=True)
-        x_train = np.load(filepath + "x_train_1.npy", allow_pickle=True)
-        y_train = np.load(filepath + "y_train_1.npy", allow_pickle=True)
-        client_str = "Local"
-
-    elif my_command == 'train_half1':
-        print("Training with train_half1")
-        # train_dataframe = pd.read_csv(os.path.join(filepath, 'data', 'train_df_half1.csv'))
-        train_dataframe = pd.read_csv(os.path.join(filepath, 'data', 'train_half1_re.csv'))
-        x_train = np.array(train_dataframe.iloc[:, :-1])
-        y_train = np.array(train_dataframe.iloc[:, -1])
-        client_str = "client1"
-        
-    elif my_command == 'train_half2':
-        print("Training with train_half2")
-        # train_dataframe = pd.read_csv(os.path.join(filepath, 'data', 'train_df_half2.csv'))
-        train_dataframe = pd.read_csv(os.path.join(filepath, 'data', 'train_half2_re.csv'))
-        x_train = np.array(train_dataframe.iloc[:, :-1])
-        y_train = np.array(train_dataframe.iloc[:, -1])
-        client_str = "client2"
-        
-    
-    # 返回所需的數據或其他變量
-    return x_train, y_train, client_str
-
-
-def ChooseTestDataSet(filepath):
-    test_dataframe = pd.read_csv(os.path.join(filepath, 'data', 'test_dataframes.csv'))
-    x_test = np.array(test_dataframe.iloc[:, :-1])
-    y_test = np.array(test_dataframe.iloc[:, -1])
-    
-    return x_test, y_test
-
-### sava dataframe to np array 
-def SaveDataframeTonpArray(dataframe, filepath ,df_name, filename):
-    #選擇了最后一列Lable之外的所有列，即選擇所有feature
-    x = np.array(dataframe.iloc[:,:-1])
-    y = np.array(dataframe.iloc[:,-1])
-
-    #np.save
-    np.save(f"{filepath}\\x_{df_name}_{filename}.npy", x)
-    np.save(f"{filepath}\\y_{df_name}_{filename}.npy", y)
-
 ### Choose Load np array
 def ChooseLoadNpArray(filepath, file, Choose_method):
 
     if file == 'total_train':
         print("Training with total_train")
         if (Choose_method == 'normal'):
-            #  x_train = np.load(filepath + "x_total_train.npy", allow_pickle=True)
-            #  y_train = np.load(filepath + "y_total_train.npy", allow_pickle=True)
-            # x_train = np.load(filepath + "x_total_train_20231102.npy", allow_pickle=True)
-            # y_train = np.load(filepath + "y_total_train_20231102.npy", allow_pickle=True)
-            # x_train = np.load(filepath + "x_train_onlyThursday_20231102.npy", allow_pickle=True)
-            # y_train = np.load(filepath + "y_train_onlyThursday_20231102.npy", allow_pickle=True)
             # x_train = np.load(filepath + "x_train_1.npy", allow_pickle=True)
             # y_train = np.load(filepath + "y_train_1.npy", allow_pickle=True)
             x_train = np.load(filepath + "x_train_20231113.npy", allow_pickle=True)
             y_train = np.load(filepath + "y_train_20231113.npy", allow_pickle=True)
+        elif (Choose_method == 'SMOTE'):
+            # x_train = np.load(filepath + "x_total_train_SMOTE_ALL_Label.npy", allow_pickle=True)
+            # y_train = np.load(filepath + "y_total_train_SMOTE_ALL_Label.npy", allow_pickle=True)
+            x_train = np.load(filepath + "x_total_train_SMOTE_ALL_Label14.npy", allow_pickle=True)
+            y_train = np.load(filepath + "y_total_train_SMOTE_ALL_Label14.npy", allow_pickle=True)
+            
+        elif (Choose_method == 'GAN'):
+            # x_train = np.load(filepath + "x_GAN_data_total_train_weakpoint_14.npy", allow_pickle=True)
+            # y_train = np.load(filepath + "y_GAN_data_total_train_weakpoint_14.npy", allow_pickle=True)
+            x_train = np.load(filepath + "x_train_20231106_afterGAN_Label14.npy", allow_pickle=True)
+            # 將複數的資料實部保留並轉換為浮點：
+            x_train = x_train.real.astype(np.float64)
+            y_train = np.load(filepath + "y_train_20231106_afterGAN_Label14.npy", allow_pickle=True)
+        
+        client_str = "BaseLine"
+        print(Choose_method)
+
+    elif file == 'train_half1':
+        if (Choose_method == 'normal'):
+            # x_train = np.load(filepath + "x_train_half1.npy", allow_pickle=True)
+            # y_train = np.load(filepath + "y_train_half1.npy", allow_pickle=True)
+            x_train = np.load(filepath + "x_train_half1_20231113.npy", allow_pickle=True)
+            y_train = np.load(filepath + "y_train_half1_20231113.npy", allow_pickle=True)
+            print("train_half1 x_train 的形狀:", x_train.shape)
+            print("train_half1 y_train 的形狀:", y_train.shape)
+        client_str = "client1"
+        print("使用 train_half1 進行訓練")
+    elif file == 'train_half2':
+        if (Choose_method == 'normal'):
+            # x_train = np.load(filepath + "x_train_half2_respilt.npy", allow_pickle=True)
+            # y_train = np.load(filepath + "y_train_half2_respilt.npy", allow_pickle=True)
+            x_train = np.load(filepath + "x_train_half2_20231113.npy", allow_pickle=True)
+            y_train = np.load(filepath + "y_train_half2_20231113.npy", allow_pickle=True)
+            print("train_half2 x_train 的形狀:", x_train.shape)
+            print("train_half2 y_train 的形狀:", y_train.shape)
+        client_str = "client2"
+        print("使用 train_half2 進行訓練")
+
+    print("use file", file)
+    return x_train, y_train,client_str
+
+# for do one hot
+def ChooseTrainDatastes(filepath, my_command,Choose_method):
+    # 加载选择的数据集
+    
+    if my_command == 'total_train':
+        if (Choose_method == 'normal'):
+            # print("Training with total_train")
+            # train_dataframe = pd.read_csv(os.path.join(filepath, 'data', 'train_dataframes_respilt.csv'))
+            # x_train = np.array(train_dataframe.iloc[:, :-1])
+            # y_train = np.array(train_dataframe.iloc[:, -1])
+            dftrain = pd.read_csv(filepath + "data\\dataset_AfterProcessed\\20231113\\train_dataframes_20231113.csv")
+
+            #特徵    
+            x_columns = dftrain.columns.drop(dftrain.filter(like='Label_').columns)
+            x_train = dftrain[x_columns].values.astype('float32')
+            y_train = dftrain.filter(like='Label_').values.astype('float32')
+            # 找到每一行中值為 1 的索引
+            label_indices = np.argmax(y_train, axis=1)
+            # 將 label_indices 賦值給 y_train，這樣 y_train 就包含了整數表示的標籤
+            y_train = label_indices
+           
         elif (Choose_method == 'SMOTE'):
             # x_train = np.load(filepath + "x_total_train_SMOTE_ALL_Label.npy", allow_pickle=True)
             # y_train = np.load(filepath + "y_total_train_SMOTE_ALL_Label.npy", allow_pickle=True)
@@ -227,47 +228,65 @@ def ChooseLoadNpArray(filepath, file, Choose_method):
             # 將複數的資料實部保留並轉換為浮點：
             x_train = x_train.real.astype(np.float64)
             y_train = np.load(filepath + "y_train_20231106_afterGAN_Label14.npy", allow_pickle=True)
-        
         client_str = "BaseLine"
-        print(Choose_method)
 
-    elif file == 'train_half1':
-        # x_train = np.load(filepath + "x_train_half1.npy", allow_pickle=True)
-        # y_train = np.load(filepath + "y_train_half1.npy", allow_pickle=True)
-        x_train = np.load(filepath + "x_train_half1_SMOTE_ALL_weakLabel.npy", allow_pickle=True)
-        y_train = np.load(filepath + "y_train_half1_SMOTE_ALL_weakLabel.npy", allow_pickle=True)
-        # x_train = np.load(filepath + "x_train_half1_respilt.npy", allow_pickle=True)
-        # y_train = np.load(filepath + "y_train_half1_respilt.npy", allow_pickle=True)
-        # x_train = np.load(filepath + f"x_{file}_weakpoint_14.npy", allow_pickle=True)
-        # y_train = np.load(filepath + f"y_{file}_weakpoint_14.npy", allow_pickle=True)
-        # x_train = np.load(filepath + f"x_{file}_weakpoint_9.npy", allow_pickle=True)
-        # y_train = np.load(filepath + f"y_{file}_weakpoint_9.npy", allow_pickle=True)
-        # x_train = np.load(filepath + f"x_{file}_weakpoint_13.npy", allow_pickle=True)
-        # y_train = np.load(filepath + f"y_{file}_weakpoint_13.npy", allow_pickle=True)
+    elif my_command == 'train_half1':
+        print("Training with train_half1")
+        dftrain = pd.read_csv(filepath + "data\\dataset_AfterProcessed\\20231113\\train_half1_20231113.csv")
+
+        #特徵    
+        x_columns = dftrain.columns.drop(dftrain.filter(like='Label_').columns)
+        x_train = dftrain[x_columns].values.astype('float32')
+        y_train = dftrain.filter(like='Label_').values.astype('float32')
+        # 找到每一行中值為 1 的索引
+        label_indices = np.argmax(y_train, axis=1)
+        # 將 label_indices 賦值給 y_train，這樣 y_train 就包含了整數表示的標籤
+        y_train = label_indices
         client_str = "client1"
-        print("使用 train_half1 進行訓練")
-    elif file == 'train_half2':
-        # x_train = np.load(filepath + "x_train_half2_respilt.npy", allow_pickle=True)
-        # y_train = np.load(filepath + "y_train_half2_respilt.npy", allow_pickle=True)
-        x_train = np.load(filepath + "x_train_half2_SMOTE_ALL_weakLabel.npy", allow_pickle=True)
-        y_train = np.load(filepath + "y_train_half2_SMOTE_ALL_weakLabel.npy", allow_pickle=True)
-        # x_train = np.load(filepath + f"x_{file}.npy", allow_pickle=True)
-        # y_train = np.load(filepath + f"y_{file}.npy", allow_pickle=True)
-        # x_train = np.load(filepath + f"x_{file}_SMOTE_8.npy", allow_pickle=True)
-        # y_train = np.load(filepath + f"y_{file}_SMOTE_8.npy", allow_pickle=True)
-        # x_train = np.load(filepath + f"x_{file}_SMOTE_13.npy", allow_pickle=True)
-        # y_train = np.load(filepath + f"y_{file}_SMOTE_13.npy", allow_pickle=True)
-        # x_train = np.load(filepath + f"x_{file}_SMOTE_14.npy", allow_pickle=True)
-        # y_train = np.load(filepath + f"y_{file}_SMOTE_14.npy", allow_pickle=True)
-        # x_train = np.load(filepath + f"x_{file}_SMOTE_ALL_weakLabel.npy", allow_pickle=True)
-        # y_train = np.load(filepath + f"y_{file}_SMOTE_ALL_weakLabel.npy", allow_pickle=True)
+        
+    elif my_command == 'train_half2':
+        print("Training with train_half2")
+        print("Training with train_half1")
+        dftrain = pd.read_csv(filepath + "data\\dataset_AfterProcessed\\20231113\\train_half2_20231113.csv")
+        #特徵    
+        x_columns = dftrain.columns.drop(dftrain.filter(like='Label_').columns)
+        x_train = dftrain[x_columns].values.astype('float32')
+        y_train = dftrain.filter(like='Label_').values.astype('float32')
+        # 找到每一行中值為 1 的索引
+        label_indices = np.argmax(y_train, axis=1)
+        # 將 label_indices 賦值給 y_train，這樣 y_train 就包含了整數表示的標籤
+        y_train = label_indices
         client_str = "client2"
-        # print(filepath + f"x_{file}_SMOTE_weakLabel.npy")
-        # print(filepath + f"y_{file}_SMOTE_weakLabel.npy")
-        print("使用 train_half2 進行訓練")
+        
+    # 返回所需的數據或其他變量
+    return x_train, y_train, client_str
 
-    print("use file", file)
-    return x_train, y_train,client_str
+
+def ChooseTestDataSet(filepath):
+    # test_dataframe = pd.read_csv(os.path.join(filepath, 'data', 'test_dataframes.csv'))
+    # x_test = np.array(test_dataframe.iloc[:, :-1])
+    # y_test = np.array(test_dataframe.iloc[:, -1])
+    dftest = pd.read_csv(filepath + "data\\dataset_AfterProcessed\\20231113\\test_dataframes_20231113.csv")
+    #x_columns作用就是丟掉Label_開頭 也就是等於特徵    
+    x_columns = dftest.columns.drop(dftest.filter(like='Label_').columns)
+    x_test = dftest[x_columns].values.astype('float32')
+    y_test = dftest.filter(like='Label_').values.astype('float32')
+    # 找到每一行中值為 1 的索引
+    label_indices = np.argmax(y_test, axis=1)
+    # 將 label_indices 賦值給 y_train，這樣 y_train 就包含了整數表示的標籤
+    y_test = label_indices
+    
+    return x_test, y_test
+
+### sava dataframe to np array 
+def SaveDataframeTonpArray(dataframe, filepath ,df_name, filename):
+    #選擇了最后一列Lable之外的所有列，即選擇所有feature
+    x = np.array(dataframe.iloc[:,:-1])
+    y = np.array(dataframe.iloc[:,-1])
+
+    #np.save
+    np.save(f"{filepath}\\x_{df_name}_{filename}.npy", x)
+    np.save(f"{filepath}\\y_{df_name}_{filename}.npy", y)
 
 ### find找到datasets中是string的行
 def findStringCloumn(dataFrame):
