@@ -210,8 +210,8 @@ def ChooseLoadNpArray(filepath, file, Choose_method):
             # y_train = np.load(filepath + "y_train_onlyThursday_20231102.npy", allow_pickle=True)
             # x_train = np.load(filepath + "x_train_1.npy", allow_pickle=True)
             # y_train = np.load(filepath + "y_train_1.npy", allow_pickle=True)
-            x_train = np.load(filepath + "x_train_20231109.npy", allow_pickle=True)
-            y_train = np.load(filepath + "y_train_20231109.npy", allow_pickle=True)
+            x_train = np.load(filepath + "x_train_20231113.npy", allow_pickle=True)
+            y_train = np.load(filepath + "y_train_20231113.npy", allow_pickle=True)
         elif (Choose_method == 'SMOTE'):
             # x_train = np.load(filepath + "x_total_train_SMOTE_ALL_Label.npy", allow_pickle=True)
             # y_train = np.load(filepath + "y_total_train_SMOTE_ALL_Label.npy", allow_pickle=True)
@@ -363,6 +363,15 @@ def spiltweakLabelbalance(weakLabel,original_dataset,size):
     # 使用train_test_split分別劃分取Label相等8、9、13、14的數據
     train_label, test_label = train_test_split(label_data, test_size=size, random_state=42)
     return train_label, test_label
+
+def spiltweakLabelbalance_afterOnehot(weak_label, original_dataset,size):
+
+    weak_label_data = original_dataset[weak_label]
+    # e.g:找到做完one hot Label_8 列中值等于1的行
+    weak_label_data_equals_1_rows = original_dataset[weak_label_data == 1]
+    weak_label_train, weak_label_test = train_test_split(weak_label_data_equals_1_rows, test_size=size, random_state=42)
+    
+    return weak_label_train, weak_label_test
 
 ## 將結合weakLabel Label8 的train_half1轉成np array
 # gan_dataframe = pd.read_csv("D:\\Labtest20230911\\GAN_data_train_half1\\GAN_data_train_half1_ADD_weakLabel_8.csv")

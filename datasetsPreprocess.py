@@ -8,8 +8,10 @@ from sklearn.model_selection import train_test_split
 from sklearn.model_selection import StratifiedShuffleSplit
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import OneHotEncoder
 from mytoolfunction import SaveDataToCsvfile,printFeatureCountAndLabelCountInfo
 from mytoolfunction import clearDirtyData,label_Encoding,splitdatasetbalancehalf,spiltweakLabelbalance,SaveDataframeTonpArray,generatefolder
+from mytoolfunction import spiltweakLabelbalance_afterOnehot
 
 #############################################################################  variable  ###################
 filepath = "D:\\Labtest20230911\\data"
@@ -104,6 +106,18 @@ def label_Encoding(label):
     mergecompelete_dataset[label] = label_encoder.fit_transform(mergecompelete_dataset[label])
     mergecompelete_dataset[label].unique()
 
+def OneHot_Encoding(feature, data):
+    # 建立 OneHotEncoder 實例
+    onehotencoder = OneHotEncoder()
+    # 使用 OneHotEncoder 進行 One-Hot 編碼
+    onehot_encoded_data = onehotencoder.fit_transform(data[[feature]]).toarray()
+     # 將 One-Hot 編碼的結果轉換為 DataFrame，並指定欄位名稱
+    onehot_encoded_data = pd.DataFrame(onehot_encoded_data, columns=[f"{feature}_{i}" for i in range(onehot_encoded_data.shape[1])])
+    # 合併原始 DataFrame 與 One-Hot 編碼的結果
+    data = pd.concat([data, onehot_encoded_data], axis=1)
+    # 刪除原始特徵列
+    data = data.drop(feature, axis=1)
+    return data
 ### do Label Encoding
 # def DoLabelEncoding(df):
 #     #將 Source IP、Source Port、Destination IP、Destination Port、Timestamp 等特徵做 one-hot 形式轉換
@@ -170,7 +184,7 @@ label_Encoding('DestinationPort')
 label_Encoding('Protocol')
 label_Encoding('Timestamp')
 label_Encoding('Label')
-mergecompelete_dataset.to_csv(filepath + "\\dataset_AfterProcessed\\total_encoded_updated_10000.csv", index=False)
+# mergecompelete_dataset.to_csv(filepath + "\\dataset_AfterProcessed\\total_encoded_updated_10000.csv", index=False)
 mergecompelete_dataset = pd.read_csv(filepath + "\\dataset_AfterProcessed\\total_encoded_updated_10000.csv")
 
 
@@ -206,39 +220,32 @@ principalDf = pd.DataFrame(data = principalComponents
 finalDf = pd.concat([undoScalerdataset,principalDf, mergecompelete_dataset[['Label']]], axis = 1)
 print(finalDf)
 mergecompelete_dataset=finalDf
-
-
-
 # 保留MinMaxScaler後的結果
-SaveDataToCsvfile(mergecompelete_dataset, "./data/dataset_AfterProcessed","total_encoded_updated_10000_After_minmax")
+# SaveDataToCsvfile(mergecompelete_dataset, "./data/dataset_AfterProcessed","total_encoded_updated_10000_After_minmax")
 
-# ## Do PCA
-# number_of_components=78 # 原84個的特徵，扣掉'SourceIP', 'SourcePort', 'DestinationIP', 'DestinationPort', 'Protocol', 'Timestamp' 'Label' | 84-6 =78
-# pca = PCA(n_components=number_of_components)
-# columns_array=[]
-# for i in range (number_of_components):
-#     columns_array.append("principal_Component"+str(i+1))
-    
-# principalComponents = pca.fit_transform(X)
-# principalDf = pd.DataFrame(data = principalComponents
-#               , columns = columns_array)
+# 做one hot
+mergecompelete_dataset = OneHot_Encoding('SourceIP', mergecompelete_dataset)
+mergecompelete_dataset = OneHot_Encoding('SourcePort', mergecompelete_dataset)
+mergecompelete_dataset = OneHot_Encoding('DestinationIP', mergecompelete_dataset)
+mergecompelete_dataset = OneHot_Encoding('DestinationPort', mergecompelete_dataset)
+mergecompelete_dataset = OneHot_Encoding('Protocol', mergecompelete_dataset)
+mergecompelete_dataset = OneHot_Encoding('Timestamp', mergecompelete_dataset)
 
-# finalDf = pd.concat([principalDf, mergecompelete_dataset[['Label']]], axis = 1)
-# mergecompelete_dataset=finalDf
+# mergecompelete_dataset = OneHot_Encoding('Label', mergecompelete_dataset)
+SaveDataToCsvfile(mergecompelete_dataset, "./data/dataset_AfterProcessed","total_encoded_updated_10000_After_minmax_onehot")
 
 # split mergecompelete_dataset
 train_dataframes, test_dataframes = train_test_split(mergecompelete_dataset, test_size=0.2, random_state=42)#test_size=0.4表示将数据集分成测试集的比例为40%
-printFeatureCountAndLabelCountInfo(train_dataframes, test_dataframes)
+# printFeatureCountAndLabelCountInfo(train_dataframes, test_dataframes)
 
 
-# train_df_half1, train_df_half2 = train_test_split(train_dataframes, test_size=0.5)
-# 分別取出Label等於8、9、13、14的數據 對半分
+# Label encode mode  分別取出Label等於8、9、13、14的數據 對半分
 train_label_8, test_label_8 = spiltweakLabelbalance(8,mergecompelete_dataset,0.4)
 train_label_9, test_label_9 = spiltweakLabelbalance(9,mergecompelete_dataset,0.5)
 train_label_13, test_label_13 = spiltweakLabelbalance(13,mergecompelete_dataset,0.5)
 train_label_14, test_label_14 = spiltweakLabelbalance(14,mergecompelete_dataset,0.5)
 
-# 刪除Label相當於8、9、13、14的行
+# # 刪除Label相當於8、9、13、14的行
 test_dataframes = test_dataframes[~test_dataframes['Label'].isin([8, 9,13, 14])]
 train_dataframes = train_dataframes[~train_dataframes['Label'].isin([8, 9,13,14])]
 # 合併Label8、9、13、14回去
@@ -271,5 +278,77 @@ SaveDataframeTonpArray(test_dataframes, f"./data/dataset_AfterProcessed/{today}"
 SaveDataframeTonpArray(train_dataframes, f"./data/dataset_AfterProcessed/{today}", "train",today)
 SaveDataframeTonpArray(train_half1, f"./data/dataset_AfterProcessed/{today}", "train_half1", today)
 SaveDataframeTonpArray(train_half2, f"./data/dataset_AfterProcessed/{today}", "train_half2", today)
+###########################################################one hot mode################################################################################################
+# one hot mode 分別取出Label等於8、9、13的數據 對半分
+# def ifspiltweakLabelbalance_AfterOneHot(test_dataframes,train_dataframes):
+#     test_label_8,train_label_8 = spiltweakLabelbalance_afterOnehot('Label_8',mergecompelete_dataset,0.5)
+#     test_label_9,train_label_9  = spiltweakLabelbalance_afterOnehot('Label_9',mergecompelete_dataset,0.5)
+#     test_label_13,train_label_13   = spiltweakLabelbalance_afterOnehot('Label_13',mergecompelete_dataset,0.5)
+#     # 取Label不是於Label_8、Label_9、Label_13的列
+#     test_dataframes = test_dataframes[(test_dataframes['Label_8'] != 1) & 
+#                                       (test_dataframes['Label_9'] != 1) &
+#                                       (test_dataframes['Label_13'] != 1)
+#                                       ]
+    
+#     train_dataframes = train_dataframes[(train_dataframes['Label_8'] != 1) & 
+#                                         (train_dataframes['Label_9'] != 1) &
+#                                         (train_dataframes['Label_13'] != 1)
+#                                         ]
+    
+#     #存回原本的test_dataframes和train_dataframes
+#     test_dataframes = pd.concat([test_dataframes, test_label_8, test_label_9, test_label_13])
+#     train_dataframes = pd.concat([train_dataframes,train_label_8, train_label_9,train_label_13])
+#     # 保存新的 DataFrame 到文件
+#     test_dataframes.to_csv("./data/test_test.csv", index=False)
+#     train_dataframes.to_csv("./data/test_train.csv", index=False)
+
+#     return test_dataframes, train_dataframes
+
+
+
+# def pintLabelcountAfterOneHot(dfname1,dfname2,test_dataframes,train_dataframes):
+#     for i in range(0,15):
+#         print(f"{str(dfname1)} Label_{i} count",len(test_dataframes[test_dataframes[f'Label_{i}'] == 1]))
+#         print(f"{str(dfname2)} Label_{i} count",len(train_dataframes[train_dataframes[f'Label_{i}'] == 1]))
+    
+# def spilt_half_train_dataframes_AfterOneHot(train_dataframes):
+#     df = pd.DataFrame(train_dataframes)
+
+#     # 初始化兩個 DataFrame 以存儲結果
+#     train_half1 = pd.DataFrame()
+#     train_half2 = pd.DataFrame()
+
+#     # 分割每個標籤
+#     for i in range(0,15):
+#         label_name = f'Label_{i}'
+#         label_data = df[label_name]
+#         label_half1, label_half2 = train_test_split(df[label_data == 1], test_size=0.5, random_state=42)
+
+#         # 將每個標籤的一半添加到對應的 DataFrame
+#         train_half1 = pd.concat([train_half1, label_half1], axis=0)
+#         train_half2 = pd.concat([train_half2, label_half2], axis=0)
+
+#     # 打印存儲結果
+#     # print("train_half1:\n", train_half1)
+#     # print("\ntrain_half2:\n", train_half2)
+#     train_half1.to_csv("./data/train_half1.csv", index=False)
+#     train_half2.to_csv("./data/train_half2.csv", index=False)
+    
+#     return train_half1, train_half2
+
+
+# test_dataframes, train_dataframes = ifspiltweakLabelbalance_AfterOneHot(test_dataframes,train_dataframes)
+# train_half1, train_half2 = spilt_half_train_dataframes_AfterOneHot(train_dataframes)
+# pintLabelcountAfterOneHot("test_dataframes","train_dataframes",test_dataframes,train_dataframes)
+# pintLabelcountAfterOneHot("train_half1","train_half2",train_half1,train_half2)
+# SaveDataToCsvfile(train_dataframes, f"./data/dataset_AfterProcessed/{today}", f"train_dataframes_{today}")
+# SaveDataToCsvfile(test_dataframes,  f"./data/dataset_AfterProcessed/{today}", f"test_dataframes_{today}")
+# SaveDataToCsvfile(train_half1, f"./data/dataset_AfterProcessed/{today}", f"train_half1_{today}")
+# SaveDataToCsvfile(train_half2,  f"./data/dataset_AfterProcessed/{today}", f"train_half2_{today}") 
+
+# SaveDataframeTonpArray(test_dataframes, f"./data/dataset_AfterProcessed/{today}", "test",today)
+# SaveDataframeTonpArray(train_dataframes, f"./data/dataset_AfterProcessed/{today}", "train",today)
+# SaveDataframeTonpArray(train_half1, f"./data/dataset_AfterProcessed/{today}", "train_half1", today)
+# SaveDataframeTonpArray(train_half2, f"./data/dataset_AfterProcessed/{today}", "train_half2", today)
 
 
