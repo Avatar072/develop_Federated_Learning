@@ -149,13 +149,20 @@ def ChooseLoadNpArray(filepath, file, Choose_method):
         if (Choose_method == 'normal'):
             # x_train = np.load(filepath + "x_train_1.npy", allow_pickle=True)
             # y_train = np.load(filepath + "y_train_1.npy", allow_pickle=True)
-            x_train = np.load(filepath + "x_train_20231113.npy", allow_pickle=True)
-            y_train = np.load(filepath + "y_train_20231113.npy", allow_pickle=True)
+            # 20231113 only do labelencode and minmax
+            # x_train = np.load(filepath + "x_train_20231113.npy", allow_pickle=True)
+            # y_train = np.load(filepath + "y_train_20231113.npy", allow_pickle=True)
+
+            # 20231114 after 百分百PCAonly do labelencode and minmax
+            x_train = np.load(filepath + "x_train_20231114.npy", allow_pickle=True)
+            y_train = np.load(filepath + "y_train_20231114.npy", allow_pickle=True)
         elif (Choose_method == 'SMOTE'):
             # x_train = np.load(filepath + "x_total_train_SMOTE_ALL_Label.npy", allow_pickle=True)
             # y_train = np.load(filepath + "y_total_train_SMOTE_ALL_Label.npy", allow_pickle=True)
-            x_train = np.load(filepath + "x_total_train_SMOTE_ALL_Label14.npy", allow_pickle=True)
-            y_train = np.load(filepath + "y_total_train_SMOTE_ALL_Label14.npy", allow_pickle=True)
+            # x_train = np.load(filepath + "x_total_train_SMOTE_ALL_Label14.npy", allow_pickle=True)
+            # y_train = np.load(filepath + "y_total_train_SMOTE_ALL_Label14.npy", allow_pickle=True)
+            x_train = np.load(filepath + "x_train_half1_20231114.npy", allow_pickle=True)
+            y_train = np.load(filepath + "y_train_half1_20231114.npy", allow_pickle=True)
             
         elif (Choose_method == 'GAN'):
             # x_train = np.load(filepath + "x_GAN_data_total_train_weakpoint_14.npy", allow_pickle=True)
@@ -170,22 +177,43 @@ def ChooseLoadNpArray(filepath, file, Choose_method):
 
     elif file == 'train_half1':
         if (Choose_method == 'normal'):
-            # x_train = np.load(filepath + "x_train_half1.npy", allow_pickle=True)
-            # y_train = np.load(filepath + "y_train_half1.npy", allow_pickle=True)
-            x_train = np.load(filepath + "x_train_half1_20231113.npy", allow_pickle=True)
-            y_train = np.load(filepath + "y_train_half1_20231113.npy", allow_pickle=True)
-            print("train_half1 x_train 的形狀:", x_train.shape)
-            print("train_half1 y_train 的形狀:", y_train.shape)
+            # 20231113 only do labelencode and minmax
+            # x_train = np.load(filepath + "x_train_half1_20231113.npy", allow_pickle=True)
+            # y_train = np.load(filepath + "y_train_half1_20231113.npy", allow_pickle=True)
+
+            # 20231114 after 百分百PCAonly do labelencode and minmax
+            x_train = np.load(filepath + "x_train_half1_20231114.npy", allow_pickle=True)
+            y_train = np.load(filepath + "y_train_half1_20231114.npy", allow_pickle=True)
+        elif (Choose_method == 'SMOTE'):
+            # #20231121 SMOTE Label 9 1000
+            x_train = np.load(filepath + "x_train_half1_SMOTE_Label_9.npy", allow_pickle=True)
+            y_train = np.load(filepath + "y_train_half1_SMOTE_Label_9.npy", allow_pickle=True)
+        elif (Choose_method == 'GAN'):
+            # 20231114 after 百分百PCAonly do labelencode and minmax
+            x_train = np.load(filepath + "x_train_half1_20231114.npy", allow_pickle=True)
+            y_train = np.load(filepath + "y_train_half1_20231114.npy", allow_pickle=True)
+        print("train_half1 x_train 的形狀:", x_train.shape)
+        print("train_half1 y_train 的形狀:", y_train.shape)
         client_str = "client1"
         print("使用 train_half1 進行訓練")
     elif file == 'train_half2':
         if (Choose_method == 'normal'):
-            # x_train = np.load(filepath + "x_train_half2_respilt.npy", allow_pickle=True)
-            # y_train = np.load(filepath + "y_train_half2_respilt.npy", allow_pickle=True)
-            x_train = np.load(filepath + "x_train_half2_20231113.npy", allow_pickle=True)
-            y_train = np.load(filepath + "y_train_half2_20231113.npy", allow_pickle=True)
-            print("train_half2 x_train 的形狀:", x_train.shape)
-            print("train_half2 y_train 的形狀:", y_train.shape)
+            # 20231113 only do labelencode and minmax
+            # x_train = np.load(filepath + "x_train_half2_20231113.npy", allow_pickle=True)
+            # y_train = np.load(filepath + "y_train_half2_20231113.npy", allow_pickle=True)
+            # 20231114 after 百分百PCAonly do labelencode and minmax
+            x_train = np.load(filepath + "x_train_half2_20231114.npy", allow_pickle=True)
+            y_train = np.load(filepath + "y_train_half2_20231114.npy", allow_pickle=True)
+        elif (Choose_method == 'SMOTE'):
+            # #20231121 BorderLineSMOTE1 Label 9 1000
+            x_train = np.load(filepath + "x_train_half2_BorederlineSMOTE_Label_9.npy", allow_pickle=True)
+            y_train = np.load(filepath + "y_train_half2_BorederlineSMOTE_Label_9.npy", allow_pickle=True)
+        elif (Choose_method == 'GAN'):
+            # 20231114 after 百分百PCAonly do labelencode and minmax
+            x_train = np.load(filepath + "x_train_half2_20231114.npy", allow_pickle=True)
+            y_train = np.load(filepath + "y_train_half2_20231114.npy", allow_pickle=True)
+        print("train_half2 x_train 的形狀:", x_train.shape)
+        print("train_half2 y_train 的形狀:", y_train.shape)
         client_str = "client2"
         print("使用 train_half2 進行訓練")
 

@@ -35,10 +35,11 @@ print(f"Choose_method: {Choose_method}")
 # ChooseLoadNpArray function  return x_train、y_train 和 client_str and Choose_method
 x_train, y_train, client_str = ChooseLoadNpArray(filepath, file, Choose_method)
 # x_train, y_train, client_str = ChooseTrainDatastes(filepath, file, Choose_method)   
+print("特徵數",x_train.shape[1])
 print(y_train)
 # print(client_str)
 counter = Counter(y_train)
-print(counter)
+print("train筆數",counter)
 today = datetime.date.today()
 today = today.strftime("%Y%m%d")
 # 在single_AnalyseReportFolder產生天日期的資料夾
@@ -47,17 +48,17 @@ generatefolder(f"./single_AnalyseReportFolder/", today)
 generatefolder(f"./single_AnalyseReportFolder/{today}/", client_str)
 generatefolder(f"./single_AnalyseReportFolder/{today}/{client_str}/", Choose_method)
 
-# x_test = np.load(filepath + "x_test.npy", allow_pickle=True)
-# y_test = np.load(filepath + "y_test.npy", allow_pickle=True)
-# x_test = np.load(filepath + "x_test_20231102.npy", allow_pickle=True)
-# y_test = np.load(filepath + "y_test_20231102.npy", allow_pickle=True)
-# x_test = np.load(filepath + "x_test_onlyThursday_20231102.npy", allow_pickle=True)
-# y_test = np.load(filepath + "y_test_onlyThursday_20231102.npy", allow_pickle=True)
-x_test = np.load(filepath + "x_test_20231113.npy", allow_pickle=True)
-y_test = np.load(filepath + "y_test_20231113.npy", allow_pickle=True)
+
+# # 20231113 only do labelencode and minmax
+# x_test = np.load(filepath + "x_test_20231113.npy", allow_pickle=True)
+# y_test = np.load(filepath + "y_test_20231113.npy", allow_pickle=True)
+
+# 20231114 after 百分百PCAonly do labelencode and minmax
+x_test = np.load(filepath + "x_test_20231114.npy", allow_pickle=True)
+y_test = np.load(filepath + "y_test_20231114.npy", allow_pickle=True)
 # x_test, y_test = ChooseTestDataSet(filepath)
 counter = Counter(y_test)
-print(counter)
+print("test筆數",counter)
 
 x_train = torch.from_numpy(x_train).type(torch.FloatTensor)
 y_train = torch.from_numpy(y_train).type(torch.LongTensor)

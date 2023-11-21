@@ -52,8 +52,13 @@ generatefolder(f"./FL_AnalyseReportfolder/", today)
 generatefolder(f"./FL_AnalyseReportfolder/{today}/", client_str)
 generatefolder(f"./FL_AnalyseReportfolder/{today}/{client_str}/", Choose_method)
 
-x_test = np.load(filepath + "x_test_20231113.npy", allow_pickle=True)
-y_test = np.load(filepath + "y_test_20231113.npy", allow_pickle=True)  # Fixed variable name
+# # # 20231113 only do labelencode and minmax
+x_test = np.load(filepath + "x_test_20231114.npy", allow_pickle=True)
+y_test = np.load(filepath + "y_test_20231114.npy", allow_pickle=True)  # Fixed variable name
+
+# 20231114 after 百分百PCAonly do labelencode and minmax
+# x_test = np.load(filepath + "x_test_20231114.npy", allow_pickle=True)
+# y_test = np.load(filepath + "y_test_20231114.npy", allow_pickle=True)
 
 x_train = torch.from_numpy(x_train).type(torch.FloatTensor)
 y_train = torch.from_numpy(y_train).type(torch.LongTensor)

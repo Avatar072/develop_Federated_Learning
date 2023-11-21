@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import MinMaxScaler
-from mytoolfunction import SaveDataToCsvfile, SaveDataframeTonpArray,generatefolder
+from mytoolfunction import SaveDataToCsvfile, SaveDataframeTonpArray,generatefolder,splitdatasetbalancehalf,printFeatureCountAndLabelCountInfo
 def zeroMean(dataMat):
     # 求列均值
     meanVal = np.mean(dataMat, axis=0)
@@ -109,7 +109,7 @@ generatefolder(filepath + "\\", "After_PCA")
 generatefolder(filepath + "\\After_PCA\\", today)
 
 # Loading datasets after label_Encoding
-mergecompelete_dataset = pd.read_csv(filepath + "\\total_encoded_updated.csv")
+mergecompelete_dataset = pd.read_csv(filepath + "\\dataset_AfterProcessed\\total_encoded_updated_10000_After_minmax.csv")
 print(type(mergecompelete_dataset))
 print(mergecompelete_dataset.shape)
 
@@ -174,21 +174,27 @@ print(len(test_dataframes))
 label_8_data = data1[data1['Label'] == 8]
 label_9_data = data1[data1['Label'] == 9]
 label_13_data = data1[data1['Label'] == 13]
-label_14_data = data1[data1['Label'] == 14]
+# label_14_data = data1[data1['Label'] == 14]
 
 # 使用train_test_split分別劃分取Label相等8、9、13、14的數據
 train_label_8, test_label_8 = train_test_split(label_8_data, test_size=0.4, random_state=42)
 train_label_9, test_label_9 = train_test_split(label_9_data, test_size=0.5, random_state=42)
 train_label_13, test_label_13 = train_test_split(label_13_data, test_size=0.5, random_state=42)
-train_label_14, test_label_14 = train_test_split(label_14_data, test_size=0.5, random_state=42)
+# train_label_14, test_label_14 = train_test_split(label_14_data, test_size=0.5, random_state=42)
 
 # 刪除Label相當於8、9、13、14的行
-test_dataframes = test_dataframes[~test_dataframes['Label'].isin([8, 9,13, 14])]
-train_dataframes = train_dataframes[~train_dataframes['Label'].isin([8, 9,13,14])]
+# test_dataframes = test_dataframes[~test_dataframes['Label'].isin([8, 9,13, 14])]
+# train_dataframes = train_dataframes[~train_dataframes['Label'].isin([8, 9,13,14])]
+test_dataframes = test_dataframes[~test_dataframes['Label'].isin([8, 9,13])]
+train_dataframes = train_dataframes[~train_dataframes['Label'].isin([8, 9,13])]
 
 # 合併Label8、9、13、14回去
-test_dataframes = pd.concat([test_dataframes, test_label_8, test_label_9, test_label_13, test_label_14])
-train_dataframes = pd.concat([train_dataframes,train_label_8, train_label_9,train_label_13,train_label_14])
+# test_dataframes = pd.concat([test_dataframes, test_label_8, test_label_9, test_label_13, test_label_14])
+# train_dataframes = pd.concat([train_dataframes,train_label_8, train_label_9,train_label_13,train_label_14])
+
+test_dataframes = pd.concat([test_dataframes, test_label_8, test_label_9, test_label_13])
+train_dataframes = pd.concat([train_dataframes,train_label_8, train_label_9,train_label_13])
+
 
 label_counts = test_dataframes['Label'].value_counts()
 print("test_dataframes\n", label_counts)
@@ -197,17 +203,38 @@ label_counts = train_dataframes['Label'].value_counts()
 print("train_dataframes\n", label_counts)
 print("train_dataframes\n", train_dataframes.shape)
 
-# SaveDataToCsvfile(train_dataframes, f"./data/After_PCA/{today}", f"train_dataframes_{today}")
-# SaveDataToCsvfile(test_dataframes, f"./data/After_PCA/{today}", f"test_dataframes_{today}")
+SaveDataToCsvfile(train_dataframes, f"./data/After_PCA/{today}", f"train_dataframes_{today}")
+SaveDataToCsvfile(test_dataframes, f"./data/After_PCA/{today}", f"test_dataframes_{today}")
 
-# x_train = np.array(train_dataframes.iloc[:,:-1])
-# y_train = np.array(train_dataframes.iloc[:,-1])
+x_train = np.array(train_dataframes.iloc[:,:-1])
+y_train = np.array(train_dataframes.iloc[:,-1])
 
-# x_test = np.array(test_dataframes.iloc[:,:-1])
-# y_test = np.array(test_dataframes.iloc[:,-1])
+x_test = np.array(test_dataframes.iloc[:,:-1])
+y_test = np.array(test_dataframes.iloc[:,-1])
 
 # np.save(f'./data/After_PCA/{today}/x_train_1', x_train)
 # np.save(f'./data/After_PCA/{today}/x_test_1', x_test)
 # np.save(f'./data/After_PCA/{today}/y_train_1', y_train)
 # np.save(f'./data/After_PCA/{today}/y_test_1', y_test)
 print("---------Finished PCA n txt save--------\n")
+# split train_dataframes各一半
+train_half1,train_half2 = splitdatasetbalancehalf(train_dataframes)
+
+# 找到train_df_half1和train_df_half2中重复的行
+duplicates = train_half2[train_half2.duplicated(keep=False)]
+
+# 删除train_df_half2中与train_df_half1重复的行
+train_df_half2 = train_half2[~train_half2.duplicated(keep=False)]
+
+# train_df_half1和train_df_half2 detail information
+printFeatureCountAndLabelCountInfo(train_half1, train_df_half2)
+
+SaveDataToCsvfile(train_dataframes, f"./data/After_PCA/{today}", f"train_dataframes_{today}")
+SaveDataToCsvfile(test_dataframes,  f"./data/After_PCA/{today}", f"test_dataframes_{today}")
+SaveDataToCsvfile(train_half1, f"./data/After_PCA/{today}", f"train_half1_{today}")
+SaveDataToCsvfile(train_half2,  f"./data/After_PCA/{today}", f"train_half2_{today}") 
+
+SaveDataframeTonpArray(test_dataframes, f"./data/After_PCA/{today}", "test",today)
+SaveDataframeTonpArray(train_dataframes, f"./data/After_PCA/{today}", "train",today)
+SaveDataframeTonpArray(train_half1, f"./data/After_PCA/{today}", "train_half1", today)
+SaveDataframeTonpArray(train_half2, f"./data/After_PCA/{today}", "train_half2", today)
