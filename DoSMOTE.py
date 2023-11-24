@@ -2,8 +2,10 @@ import torch
 import datetime
 import numpy as np
 import matplotlib.pyplot as plt
+from sklearn.neighbors import NearestNeighbors
 import imblearn # Oversample with SMOTE and random undersample for imbalanced dataset
 from imblearn.over_sampling import SMOTE
+from imblearn.over_sampling import BorderlineSMOTE
 from imblearn.under_sampling import RandomUnderSampler
 from imblearn.pipeline import Pipeline
 from collections import Counter
@@ -13,7 +15,7 @@ from numpy import where
 from mytoolfunction import  ChooseLoadNpArray, ChooseTrainDatastes, ParseCommandLineArgs,generatefolder
 
 filepath = "D:\\Labtest20230911\\"
-desired_sample_count = 1500
+desired_sample_count = 4000
 today = datetime.date.today()
 today = today.strftime("%Y%m%d")
 # k_neighbors = 1  # 调整k_neighbors的值  label 8要設因為樣本只有2個
@@ -22,12 +24,16 @@ today = today.strftime("%Y%m%d")
 # python DoSMOTE.py --dataset train_half1
 # python DoSMOTE.py --dataset total_train
 # python DoSMOTE.py --dataset train_half1 --epochs 10000 --weaklabel 13
-file, num_epochs, weakLabel= ParseCommandLineArgs(["dataset", "epochs","weaklabel"])
+# python DoSMOTE.py --dataset train_half1 --method normal
+# file, num_epochs, weakLabel= ParseCommandLineArgs(["dataset", "epochs","weaklabel"])
+file, num_epochs,Choose_method = ParseCommandLineArgs(["dataset", "epochs", "method"])
 print(f"Dataset: {file}")
-print(f"weakLabel: {weakLabel}")
-x_train, y_train, client_str = ChooseTrainDatastes(filepath, file)
+print(f"Number of epochs: {num_epochs}")
+print(f"Choose_method: {Choose_method}")
+# ChooseLoadNpArray function  return x_train、y_train 和 client_str and Choose_method
+x_train, y_train, client_str = ChooseLoadNpArray(filepath, file, Choose_method)
 print(f"client_str: {client_str}")
-# x_train, y_train, client_str = ChooseLoadNpArray(filepath, file)
+
 #feature and label count
 # print(x_train.shape[1])
 # print(len(np.unique(y_train)))
@@ -52,29 +58,62 @@ cmap_original = plt.get_cmap('tab20', lut=len(np.unique(y_train)))
 ### 一次SMOTE所有weaklabel
 def DoALLWeakLabel(x_train,y_train):
     # 对Label14进行SMOTE
-    sampling_strategy_14 = {14: desired_sample_count}
+    # sampling_strategy_14 = {14: desired_sample_count}
+    x_train = x_train.real #去除复數 因為做完統計百分比PCA後會有
+    # Assuming y_train contains the labels
+    unique_labels = np.unique(y_train)
+
+    # Choose a colormap with at least 15 distinct colors
+    cmap = plt.get_cmap('tab20')
+
+    for label in unique_labels:
+        row_ix = np.where(y_train == label)[0]
+        plt.scatter(x_train[row_ix, 0], x_train[row_ix, 1], label=f'{label}', color=cmap(label))
+
+    plt.legend()
+    plt.show()    
+
+    sampling_strategy_14 = {9: 1000}
     oversample_14 = SMOTE(sampling_strategy=sampling_strategy_14, random_state=42)
-    x_train, y_train = oversample_14.fit_resample(x_train, y_train)
-    print("Label 14 SMOTE", Counter(y_train))
-    # 对Label9进行SMOTE
-    sampling_strategy_9 = {9: desired_sample_count}
-    oversample_9 = SMOTE(sampling_strategy=sampling_strategy_9, random_state=42)
-    x_train, y_train = oversample_9.fit_resample(x_train, y_train)
-    print("Label 9 SMOTE", Counter(y_train))
-    # 对Label13进行SMOTE
-    sampling_strategy_13 = {13: desired_sample_count}
-    oversample_13 = SMOTE(sampling_strategy=sampling_strategy_13,k_neighbors = 4, random_state=42)
-    x_train, y_train = oversample_13.fit_resample(x_train, y_train)
-    print("Label 13 SMOTE", Counter(y_train))
-    # 对Label8进行SMOTE
-    sampling_strategy_8 = {8: desired_sample_count}
-    oversample_8 = SMOTE(sampling_strategy=sampling_strategy_8,k_neighbors = 2, random_state=42)
-    x_train, y_train = oversample_8.fit_resample(x_train, y_train)
-    print("Label 8 SMOTE", Counter(y_train))
+    X_res, y_res = oversample_14.fit_resample(x_train, y_train)
+    print("Label 9 SMOTE", Counter(y_res))
+    # # 对Label8进行SMOTE
+    # sampling_strategy_8 = {8: 4017}
+    # oversample_8 = SMOTE(sampling_strategy=sampling_strategy_8,k_neighbors = 2, random_state=42)
+    # x_train, y_train = oversample_8.fit_resample(x_train, y_train)
+    # print("Label 8 SMOTE", Counter(y_train))
     # np.save(f"{filepath}\\GAN_data_train_half2\\x_{file}_SMOTE_ALL_weakLabel.npy", x_train)
     # np.save(f"{filepath}\\GAN_data_train_half2\\y_{file}_SMOTE_ALL_weakLabel.npy", y_train)
-    np.save(f"{filepath}\\GAN_data_train_half1\\x_{file}_SMOTE_ALL_weakLabel.npy", x_train)
-    np.save(f"{filepath}\\GAN_data_train_half1\\y_{file}_SMOTE_ALL_weakLabel.npy", y_train)
+    label_indices_Original = np.where(y_train == 9)[0]
+
+    # 獲取原始數據中標籤為 weakLabel 的數據點
+    x_train_label_Oringinal = x_train[label_indices_Original]
+
+    # 找到SMOTE採樣後的數據中標籤 weakLabel 的索引
+    label_indices_SMOTE = np.where(y_res == 9)[0]
+
+    # 獲取SMOTE採樣後的數據中標籤 weakLabel 的數據點
+    X_resampled_label_SMOTE = X_res[label_indices_SMOTE]
+
+
+
+    plt.scatter(x_train_label_Oringinal[:, 0], 
+            x_train_label_Oringinal[:, 1], 
+            c='red', marker='o', s=20, 
+            label=f'Original Samples (Label {9}): {len(x_train_label_Oringinal)})')
+    # 繪制SMOTE採樣後的數據中的標籤 weakLabel
+    plt.scatter(X_resampled_label_SMOTE[:, 0], 
+                X_resampled_label_SMOTE[:, 1], 
+                c='blue', marker='x', s=36, 
+                label=f' SMOTE Samples (Label {9}: {len(X_resampled_label_SMOTE)})')
+    # 添加圖例
+    plt.legend()
+    plt.savefig(f"./ALL_Label/SMOTE/{today}/Label9/SMOTE_Samples_Label_{9}.png")
+    plt.show()
+
+    generatefolder(f'{filepath}\\ALL_Label\\SMOTE\\{today}\\', "Label9")
+    np.save(f"{filepath}\\ALL_Label\\SMOTE\\{today}\\Label9\\x_{file}_SMOTE_Label_9.npy", X_res)
+    np.save(f"{filepath}\\ALL_Label\\SMOTE\\{today}\\Label9\\y_{file}_SMOTE_Label_9.npy", y_res)
 
 def DoALL_Label(x_train,y_train):
     generatefolder(filepath, "ALL_Label")
@@ -93,9 +132,73 @@ def DoALL_Label(x_train,y_train):
     
     np.save(f"{filepath}\\ALL_Label\\SMOTE\\{today}\\x_{file}_SMOTE_ALL_Label.npy", x_train)
     np.save(f"{filepath}\\ALL_Label\\SMOTE\\{today}\\y_{file}_SMOTE_ALL_Label.npy", y_train)
-# DoALLWeakLabel(x_train,y_train)
-DoALL_Label(x_train,y_train)
 
+def DoBorederlineSMOTE(x_train, y_train,choosekind):
+    generatefolder(filepath, "ALL_Label")
+    generatefolder(f'{filepath}' + '\\ALL_Label\\', "BorederlineSMOTE")
+    generatefolder(f'{filepath}' + '\\ALL_Label\\BorederlineSMOTE\\', choosekind)
+    generatefolder(f'{filepath}' + '\\ALL_Label\\BorederlineSMOTE\\'+ f'{choosekind}\\', today)
+    generatefolder(f'{filepath}' + '\\ALL_Label\\BorederlineSMOTE\\'+ f'{choosekind}\\' + f'{today}\\', client_str)
+    generatefolder(f'{filepath}' + '\\ALL_Label\\BorederlineSMOTE\\'+ f'{choosekind}\\' + f'{today}\\' + f'{client_str}\\', "Label9")
+    x_train = x_train.real #去除复數 因為做完統計百分比PCA後會有
+    # Assuming y_train contains the labels
+    unique_labels = np.unique(y_train)
+
+    # Choose a colormap with at least 15 distinct colors
+    # cmap = plt.get_cmap('tab20')
+
+    # for label in unique_labels:
+    #     row_ix = np.where(y_train == label)[0]
+    #     plt.scatter(x_train[row_ix, 0], x_train[row_ix, 1], label=f'{label}', color=cmap(label))
+
+    # plt.legend()
+    # plt.show()
+    
+    print('Original dataset shape %s' % Counter(y_train))
+    sampling_strategy_14 = {9: 1000} 
+    # BorderlineSMOTE
+    oversample_14 = BorderlineSMOTE(sampling_strategy=sampling_strategy_14, kind=choosekind ,k_neighbors=1,m_neighbors =2,random_state=42)
+    # oversample_14 = BorderlineSMOTE()
+    X_res, y_res = oversample_14.fit_resample(x_train, y_train)
+    print('Resampled dataset shape %s' % Counter(y_res))
+    
+
+
+    # # 獲取原始數據中標籤為 weakLabel 的索引
+    label_indices_Original = np.where(y_train == 9)[0]
+
+    # 獲取原始數據中標籤為 weakLabel 的數據點
+    x_train_label_Oringinal = x_train[label_indices_Original]
+
+    # 找到SMOTE採樣後的數據中標籤 weakLabel 的索引
+    label_indices_SMOTE = np.where(y_res == 9)[0]
+
+    # 獲取SMOTE採樣後的數據中標籤 weakLabel 的數據點
+    X_resampled_label_SMOTE = X_res[label_indices_SMOTE]
+
+
+
+    plt.scatter(x_train_label_Oringinal[:, 0], 
+            x_train_label_Oringinal[:, 1], 
+            c='red', marker='o', s=20, 
+            label=f'Original Samples (Label {9}): {len(x_train_label_Oringinal)})')
+    # 繪制SMOTE採樣後的數據中的標籤 weakLabel
+    plt.scatter(X_resampled_label_SMOTE[:, 0], 
+                X_resampled_label_SMOTE[:, 1], 
+                c='blue', marker='x', s=36, 
+                label=f'Borederline SMOTE {choosekind} Samples (Label {9}: {len(X_resampled_label_SMOTE)})')
+    # 添加圖例
+    plt.legend()
+    plt.savefig(f"./ALL_Label/BorederlineSMOTE/{choosekind}/{today}/{client_str}/Label9/BorederlineSMOTE_{choosekind}_Samples_Label_{9}.png")
+    plt.show()
+    
+    np.save(f"{filepath}\\ALL_Label\\BorederlineSMOTE\\{choosekind}\\{today}\\{client_str}\\Label9\\x_{file}_BorederlineSMOTE_Label_9_{today}.npy", X_res)
+    np.save(f"{filepath}\\ALL_Label\\BorederlineSMOTE\\{choosekind}\\{today}\\{client_str}\\Label9\\y_{file}_BorederlineSMOTE_Label_9_{today}.npy", y_res)
+
+# DoALLWeakLabel(x_train,y_train)
+# DoALL_Label(x_train,y_train)
+DoBorederlineSMOTE(x_train, y_train,"borderline-1")
+# DoBorederlineSMOTE(x_train, y_train,"borderline-2")
 ###############################################
 # #一次SMOTE只SMOTE一個weaklabel
 # sampling_strategy = {weakLabel: desired_sample_count}   # weakLabel和設置desired_sample_count為希望稱生成的樣本數量
