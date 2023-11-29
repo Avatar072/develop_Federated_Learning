@@ -273,8 +273,9 @@ class FlowerClient(fl.client.NumPyClient):
         return self.get_parameters(config={}), len(trainloader.dataset), {}#step1上傳給權重，#step2在server做聚合，step3往下傳給server
 
     def evaluate(self, parameters, config):
-        self.set_parameters(parameters)#更新現有的知識#step4 更新model
+        
         accuracy = test(net, testloader, start_IDS, client_str,True)
+        self.set_parameters(parameters)#更新現有的知識#step4 更新model
         return accuracy, len(testloader.dataset), {"accuracy": accuracy}
 
 # 初始化神经网络模型

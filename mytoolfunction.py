@@ -186,8 +186,14 @@ def ChooseLoadNpArray(filepath, file, Choose_method):
             y_train = np.load(filepath + "y_train_half1_20231114.npy", allow_pickle=True)
         elif (Choose_method == 'SMOTE'):
             # #20231121 SMOTE Label 9 1000
-            x_train = np.load(filepath + "x_train_half1_SMOTE_Label_9.npy", allow_pickle=True)
-            y_train = np.load(filepath + "y_train_half1_SMOTE_Label_9.npy", allow_pickle=True)
+            # x_train = np.load(filepath + "x_train_half1_SMOTE_Label_9.npy", allow_pickle=True)
+            # y_train = np.load(filepath + "y_train_half1_SMOTE_Label_9.npy", allow_pickle=True)
+            # #20231127 SMOTE Lable8 1000 and Label 9 1000
+            # x_train = np.load(filepath + "x_train_half1_SMOTE_Label8_and_Label9_20231127.npy", allow_pickle=True)
+            # y_train = np.load(filepath + "y_train_half1_SMOTE_Label8_and_Label9_20231127.npy", allow_pickle=True)
+            # 20231129 SMOTE Lable8 1000 and Label 9 1000 k=1
+            x_train = np.load(filepath + "x_train_half1_SMOTE_Label8_and_Label9_20231129.npy", allow_pickle=True)
+            y_train = np.load(filepath + "y_train_half1_SMOTE_Label8_and_Label9_20231129.npy", allow_pickle=True)
         elif (Choose_method == 'GAN'):
             # 20231114 after 百分百PCAonly do labelencode and minmax
             x_train = np.load(filepath + "x_train_half1_20231114.npy", allow_pickle=True)
@@ -209,8 +215,14 @@ def ChooseLoadNpArray(filepath, file, Choose_method):
             # x_train = np.load(filepath + "x_train_half2_BorederlineSMOTE_Label_9.npy", allow_pickle=True)
             # y_train = np.load(filepath + "y_train_half2_BorederlineSMOTE_Label_9.npy", allow_pickle=True)
             # #20231122 BorderLineSMOTE1 Label 9 1000 k_neighbors=1 m_neighbors =2
-            x_train = np.load(filepath + "x_train_half2_BorederlineSMOTE_Label_9_20231122.npy", allow_pickle=True)
-            y_train = np.load(filepath + "y_train_half2_BorederlineSMOTE_Label_9_20231122.npy", allow_pickle=True)
+            # x_train = np.load(filepath + "x_train_half2_BorederlineSMOTE_Label_9_20231122.npy", allow_pickle=True)
+            # y_train = np.load(filepath + "y_train_half2_BorederlineSMOTE_Label_9_20231122.npy", allow_pickle=True)
+            # 20231127 BorderLineSMOTE1 Lable and Label 9 1000 k_neighbors=1 m_neighbors =5
+            # x_train = np.load(filepath + "x_train_half2_BorederlineSMOTE_Label8_and_Label9_20231127.npy", allow_pickle=True)
+            # y_train = np.load(filepath + "y_train_half2_BorederlineSMOTE_Label8_and_Label9_20231127.npy", allow_pickle=True)
+            # 20231129 BorderLineSMOTE1 Lable and Label 9 1000 k_neighbors=1 m_neighbors =5
+            x_train = np.load(filepath + "x_train_half2_BorederlineSMOTE_Label8_and_Label9_20231129.npy", allow_pickle=True)
+            y_train = np.load(filepath + "y_train_half2_BorederlineSMOTE_Label8_and_Label9_20231129.npy", allow_pickle=True)
         elif (Choose_method == 'GAN'):
             # 20231114 after 百分百PCAonly do labelencode and minmax
             x_train = np.load(filepath + "x_train_half2_20231114.npy", allow_pickle=True)
