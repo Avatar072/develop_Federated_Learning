@@ -58,6 +58,9 @@ cmap_original = plt.get_cmap('tab20', lut=len(np.unique(y_train)))
 ### 一次SMOTE所有weaklabel
 def DoALLWeakLabel(x_train,y_train):
     generatefolder(f'{filepath}' + '\\ALL_Label\\SMOTE\\' + f'{today}\\', client_str)
+    generatefolder(f'{filepath}\\ALL_Label\\SMOTE\\{today}\\{client_str}\\', "Label8_and_Label9")
+    generatefolder(f'{filepath}\\ALL_Label\\SMOTE\\{today}\\{client_str}\\', "Label8")
+    generatefolder(f'{filepath}\\ALL_Label\\SMOTE\\{today}\\{client_str}\\', "Label9")
 
     # 对Label14进行SMOTE
     # sampling_strategy_14 = {14: desired_sample_count}
@@ -76,7 +79,7 @@ def DoALLWeakLabel(x_train,y_train):
     plt.show()    
 
     sampling_strategy_9 = {9: 1000}
-    oversample_9 = SMOTE(sampling_strategy=sampling_strategy_9, random_state=42)
+    oversample_9 = SMOTE(sampling_strategy=sampling_strategy_9,k_neighbors = 5, random_state=42)
     X_res, y_res = oversample_9.fit_resample(x_train, y_train)
     print("Label 9 SMOTE", Counter(y_res))
     # 对Label8进行SMOTE
@@ -113,7 +116,7 @@ def DoALLWeakLabel(x_train,y_train):
                 label=f'SMOTE Samples (Label {8}: {len(X_resampled_label8_SMOTE)})')
     # 添加圖例
     plt.legend()
-    plt.savefig(f"./ALL_Label/SMOTE/{today}/{client_str}/Label8/BorederlineSMOTE_Samples_After_SMOTE_Label_{8}.png")
+    plt.savefig(f"./ALL_Label/SMOTE/{today}/{client_str}/Label8/SMOTE_Samples_After_SMOTE_Label_{8}.png")
     plt.show()
 
 
@@ -147,7 +150,7 @@ def DoALLWeakLabel(x_train,y_train):
     plt.savefig(f"./ALL_Label/SMOTE/{today}/{client_str}/Label9/BorederlineSMOTE_Samples_After_SMOTE_Label_{9}.png")
     plt.show()
 
-    generatefolder(f'{filepath}\\ALL_Label\\SMOTE\\{today}\\{client_str}\\', "Label8_and_Label9")
+   
     # np.save(f"{filepath}\\ALL_Label\\SMOTE\\{today}\\Label9\\x_{file}_SMOTE_Label_9.npy", X_res)
     # np.save(f"{filepath}\\ALL_Label\\SMOTE\\{today}\\Label9\\y_{file}_SMOTE_Label_9.npy", y_res)
     np.save(f"{filepath}\\ALL_Label\\SMOTE\\{today}\\{client_str}\\Label8_and_Label9\\x_{file}_SMOTE_Label8_and_Label9_{today}.npy", X_res)
@@ -179,6 +182,8 @@ def DoBorederlineSMOTE(x_train, y_train,choosekind,ChooseLable):
     generatefolder(f'{filepath}' + '\\ALL_Label\\BorederlineSMOTE\\'+ f'{choosekind}\\', today)
     generatefolder(f'{filepath}' + '\\ALL_Label\\BorederlineSMOTE\\'+ f'{choosekind}\\' + f'{today}\\', client_str)
     generatefolder(f'{filepath}' + '\\ALL_Label\\BorederlineSMOTE\\'+ f'{choosekind}\\' + f'{today}\\' + f'{client_str}\\', f'{ChooseLable}')
+    generatefolder(f'{filepath}' + '\\ALL_Label\\BorederlineSMOTE\\'+ f'{choosekind}\\' + f'{today}\\' + f'{client_str}\\', "Label8")
+    generatefolder(f'{filepath}' + '\\ALL_Label\\BorederlineSMOTE\\'+ f'{choosekind}\\' + f'{today}\\' + f'{client_str}\\', "Label9")
     x_train = x_train.real #去除复數 因為做完統計百分比PCA後會有
     # Assuming y_train contains the labels
     unique_labels = np.unique(y_train)
@@ -197,7 +202,7 @@ def DoBorederlineSMOTE(x_train, y_train,choosekind,ChooseLable):
     sampling_strategy_8 = {8: 1000}
     sampling_strategy_9 = {9: 1000} 
     # BorderlineSMOTE
-    oversample_8 = BorderlineSMOTE(sampling_strategy=sampling_strategy_8, kind=choosekind ,k_neighbors=1,m_neighbors =5,random_state=42)
+    oversample_8 = BorderlineSMOTE(sampling_strategy=sampling_strategy_8, kind=choosekind ,k_neighbors=2,m_neighbors =10,random_state=42)
     X_res, y_res = oversample_8.fit_resample(x_train, y_train)
     print('Resampled dataset shape %s' % Counter(y_res))
     
@@ -232,7 +237,7 @@ def DoBorederlineSMOTE(x_train, y_train,choosekind,ChooseLable):
     plt.show()
 
 
-    oversample_9 = BorderlineSMOTE(sampling_strategy=sampling_strategy_9, kind=choosekind ,k_neighbors=1,m_neighbors =10,random_state=42)
+    oversample_9 = BorderlineSMOTE(sampling_strategy=sampling_strategy_9, kind=choosekind ,k_neighbors=5,m_neighbors =10,random_state=42)
     X_res, y_res = oversample_9.fit_resample(X_res, y_res)
     print('Resampled dataset shape %s' % Counter(y_res))
 
@@ -267,8 +272,8 @@ def DoBorederlineSMOTE(x_train, y_train,choosekind,ChooseLable):
     plt.savefig(f"./ALL_Label/BorederlineSMOTE/{choosekind}/{today}/{client_str}/Label9/BorederlineSMOTE_{choosekind}_Samples_Label_{9}.png")
     plt.show()
     
-    # np.save(f"{filepath}\\ALL_Label\\BorederlineSMOTE\\{choosekind}\\{today}\\{client_str}\\Label8_and_Label9\\x_{file}_BorederlineSMOTE_Label8_and_Label9_{today}.npy", X_res)
-    # np.save(f"{filepath}\\ALL_Label\\BorederlineSMOTE\\{choosekind}\\{today}\\{client_str}\\Label8_and_Label9\\y_{file}_BorederlineSMOTE_Label8_and_Label9_{today}.npy", y_res)
+    np.save(f"{filepath}\\ALL_Label\\BorederlineSMOTE\\{choosekind}\\{today}\\{client_str}\\Label8_and_Label9\\x_{file}_BorederlineSMOTE_Label8_and_Label9_{today}.npy", X_res)
+    np.save(f"{filepath}\\ALL_Label\\BorederlineSMOTE\\{choosekind}\\{today}\\{client_str}\\Label8_and_Label9\\y_{file}_BorederlineSMOTE_Label8_and_Label9_{today}.npy", y_res)
 
 # DoALLWeakLabel(x_train,y_train)
 # DoALL_Label(x_train,y_train)
