@@ -53,17 +53,51 @@ cmap_original = plt.get_cmap('tab20', lut=len(np.unique(y_train)))
 # plt.legend()
 # plt.show()
 
-################## DO SMOTE ##################
+def SMOTEParameterSet(choose_strategy, choose_k_neighbors,x_train, y_train, Label_encode):
+        
+        oversample = SMOTE(sampling_strategy = choose_strategy, k_neighbors = choose_k_neighbors, random_state = 42)
+        
+        X_res, y_res = oversample.fit_resample(x_train, y_train)
+        print('Resampled dataset shape %s' % Counter(y_res))
+        # # 獲取原始數據中標籤為 weakLabel 的索引
+        Label_indices_Original = np.where(y_train == Label_encode)[0]
 
-### 一次SMOTE所有weaklabel
-def DoALLWeakLabel(x_train,y_train):
+        # 獲取原始數據中標籤為 weakLabel 的數據點
+        x_train_Label_Oringinal = x_train[Label_indices_Original]
+
+        # 找到SMOTE採樣後的數據中標籤 weakLabel 的索引
+        Label_indices_SMOTE = np.where(y_res == Label_encode)[0]
+
+        # 獲取SMOTE採樣後的數據中標籤 weakLabel 的數據點
+        X_resampled_Label_SMOTE = X_res[Label_indices_SMOTE]
+
+        plt.scatter(x_train_Label_Oringinal[:, 0], 
+                x_train_Label_Oringinal[:, 1], 
+                c='red', marker='o', s=20, 
+                label=f'Original Samples (Label {Label_encode}): {len(x_train_Label_Oringinal)})')
+        plt.legend()
+        plt.savefig(f"./ALL_Label/SMOTE/{today}/{client_str}/Label{Label_encode}/SMOTE_Samples_Original_Label_{Label_encode}.png")
+
+        plt.show()
+        # 繪制SMOTE採樣後的數據中的標籤 weakLabel
+        plt.scatter(X_resampled_Label_SMOTE[:, 0], 
+                    X_resampled_Label_SMOTE[:, 1], 
+                    c='blue', marker='x', s=36, 
+                    label=f'SMOTE Samples (Label {Label_encode}: {len(X_resampled_Label_SMOTE)})')
+        # 添加圖例
+        plt.legend()
+        plt.savefig(f"./ALL_Label/SMOTE/{today}/{client_str}/Label{Label_encode}/SMOTE_Samples_After_SMOTE_Label_{Label_encode}.png")   
+        plt.show()
+        return X_res, y_res
+
+def DoALLWeakLabel(x_train,y_train, ChooseLabel):
+    
     generatefolder(f'{filepath}' + '\\ALL_Label\\SMOTE\\' + f'{today}\\', client_str)
-    generatefolder(f'{filepath}\\ALL_Label\\SMOTE\\{today}\\{client_str}\\', "Label8_and_Label9")
+    generatefolder(f'{filepath}\\ALL_Label\\SMOTE\\{today}\\{client_str}\\', f'{ChooseLabel}')
     generatefolder(f'{filepath}\\ALL_Label\\SMOTE\\{today}\\{client_str}\\', "Label8")
     generatefolder(f'{filepath}\\ALL_Label\\SMOTE\\{today}\\{client_str}\\', "Label9")
+    generatefolder(f'{filepath}\\ALL_Label\\SMOTE\\{today}\\{client_str}\\', "Label13")
 
-    # 对Label14进行SMOTE
-    # sampling_strategy_14 = {14: desired_sample_count}
     x_train = x_train.real #去除复數 因為做完統計百分比PCA後會有
     # Assuming y_train contains the labels
     unique_labels = np.unique(y_train)
@@ -78,83 +112,18 @@ def DoALLWeakLabel(x_train,y_train):
     plt.legend()
     plt.show()    
 
-    sampling_strategy_9 = {9: 1000}
-    oversample_9 = SMOTE(sampling_strategy=sampling_strategy_9,k_neighbors = 5, random_state=42)
-    X_res, y_res = oversample_9.fit_resample(x_train, y_train)
-    print("Label 9 SMOTE", Counter(y_res))
-    # 对Label8进行SMOTE
-    sampling_strategy_8 = {8: 1000}
-    oversample_8 = SMOTE(sampling_strategy=sampling_strategy_8,k_neighbors = 2, random_state=42)
-    X_res, y_res = oversample_8.fit_resample(X_res, y_res)
-    print("Label 8 SMOTE", Counter(y_res))
+    print('Original dataset shape %s' % Counter(y_train))
+    sampling_strategy_Label8 = {8: 2000}
+    sampling_strategy_Label9 = {9: 2000}
+    sampling_strategy_Label13 = {13: 2000} 
+     # Start Do SMOTE
+    X_res, y_res = SMOTEParameterSet(sampling_strategy_Label8, 2, x_train, y_train, 8)
+    X_res, y_res = SMOTEParameterSet(sampling_strategy_Label9, 5, X_res, y_res, 9)
+    X_res, y_res = SMOTEParameterSet(sampling_strategy_Label13,4, X_res, y_res, 13)
 
-
-     # # 獲取原始數據中標籤為 weakLabel 的索引
-    label8_indices_Original = np.where(y_train == 8)[0]
-
-    # 獲取原始數據中標籤為 weakLabel 的數據點
-    x_train_label8_Oringinal = x_train[label8_indices_Original]
-
-    # 找到SMOTE採樣後的數據中標籤 weakLabel 的索引
-    label8_indices_SMOTE = np.where(y_res == 8)[0]
-
-    # 獲取SMOTE採樣後的數據中標籤 weakLabel 的數據點
-    X_resampled_label8_SMOTE = X_res[label8_indices_SMOTE]
-
-    plt.scatter(x_train_label8_Oringinal[:, 0], 
-            x_train_label8_Oringinal[:, 1], 
-            c='red', marker='o', s=20, 
-            label=f'Original Samples (Label {8}): {len(x_train_label8_Oringinal)})')
-    # 添加圖例
-    plt.legend()
-    plt.savefig(f"./ALL_Label/SMOTE/{today}/{client_str}/Label8/SMOTE_Samples_Original_Label_{8}.png")
-    plt.show()
-    # 繪制SMOTE採樣後的數據中的標籤 weakLabel
-    plt.scatter(X_resampled_label8_SMOTE[:, 0], 
-                X_resampled_label8_SMOTE[:, 1], 
-                c='blue', marker='x', s=36, 
-                label=f'SMOTE Samples (Label {8}: {len(X_resampled_label8_SMOTE)})')
-    # 添加圖例
-    plt.legend()
-    plt.savefig(f"./ALL_Label/SMOTE/{today}/{client_str}/Label8/SMOTE_Samples_After_SMOTE_Label_{8}.png")
-    plt.show()
-
-
-    # # 獲取原始數據中標籤為 weakLabel 的索引
-    label9_indices_Original = np.where(y_train == 9)[0]
-
-    # 獲取原始數據中標籤為 weakLabel 的數據點
-    x_train_label9_Oringinal = x_train[label9_indices_Original]
-
-    # 找到SMOTE採樣後的數據中標籤 weakLabel 的索引
-    label9_indices_SMOTE = np.where(y_res == 9)[0]
-
-    # 獲取SMOTE採樣後的數據中標籤 weakLabel 的數據點
-    X_resampled_label9_SMOTE = X_res[label9_indices_SMOTE]
-
-    plt.scatter(x_train_label9_Oringinal[:, 0], 
-            x_train_label9_Oringinal[:, 1], 
-            c='red', marker='o', s=20, 
-            label=f'Original Samples (Label {9}): {len(x_train_label9_Oringinal)})')
-    # 添加圖例
-    plt.legend()
-    plt.savefig(f"./ALL_Label/SMOTE/{today}/{client_str}/Label9/SMOTE_Samples_Original_Label_{9}.png")
-    plt.show()
-    # 繪制SMOTE採樣後的數據中的標籤 weakLabel
-    plt.scatter(X_resampled_label9_SMOTE[:, 0], 
-                X_resampled_label9_SMOTE[:, 1], 
-                c='blue', marker='x', s=36, 
-                label=f'SMOTE Samples (Label {9}: {len(X_resampled_label9_SMOTE)})')
-    # 添加圖例
-    plt.legend()
-    plt.savefig(f"./ALL_Label/SMOTE/{today}/{client_str}/Label9/BorederlineSMOTE_Samples_After_SMOTE_Label_{9}.png")
-    plt.show()
-
-   
-    # np.save(f"{filepath}\\ALL_Label\\SMOTE\\{today}\\Label9\\x_{file}_SMOTE_Label_9.npy", X_res)
-    # np.save(f"{filepath}\\ALL_Label\\SMOTE\\{today}\\Label9\\y_{file}_SMOTE_Label_9.npy", y_res)
-    np.save(f"{filepath}\\ALL_Label\\SMOTE\\{today}\\{client_str}\\Label8_and_Label9\\x_{file}_SMOTE_Label8_and_Label9_{today}.npy", X_res)
-    np.save(f"{filepath}\\ALL_Label\\SMOTE\\{today}\\{client_str}\\Label8_and_Label9\\y_{file}_SMOTE_Label8_and_Label9_{today}.npy", y_res)
+    print('After SMOTE dataset shape %s' % Counter(y_res)) 
+    np.save(f"{filepath}\\ALL_Label\\SMOTE\\{today}\\{client_str}\\{ChooseLabel}\\x_{file}_SMOTE_{ChooseLabel}_{today}.npy", X_res)
+    np.save(f"{filepath}\\ALL_Label\\SMOTE\\{today}\\{client_str}\\{ChooseLabel}\\y_{file}_SMOTE_{ChooseLabel}_{today}.npy", y_res)
 
 
 def DoALL_Label(x_train,y_train):
@@ -255,10 +224,10 @@ def DoBorederlineSMOTE(x_train, y_train,choosekind,ChooseLable):
     np.save(f"{filepath}\\ALL_Label\\BorederlineSMOTE\\{choosekind}\\{today}\\{client_str}\\{ChooseLable}\\x_{file}_BorederlineSMOTE_{choosekind}_{ChooseLable}_{today}.npy", X_res)
     np.save(f"{filepath}\\ALL_Label\\BorederlineSMOTE\\{choosekind}\\{today}\\{client_str}\\{ChooseLable}\\y_{file}_BorederlineSMOTE_{choosekind}_{ChooseLable}_{today}.npy", y_res)
 
-# DoALLWeakLabel(x_train,y_train)
+# DoALLWeakLabel(x_train,y_train,"Label8_and_Label9_Label13")
 # DoALL_Label(x_train,y_train)
-# DoBorederlineSMOTE(x_train, y_train,"borderline-1","Label8_and_Label9")
-DoBorederlineSMOTE(x_train, y_train,"borderline-2","Label8_and_Label9_Label13")
+DoBorederlineSMOTE(x_train, y_train,"borderline-1","Label8_and_Label9_Label13")
+# DoBorederlineSMOTE(x_train, y_train,"borderline-2","Label8_and_Label9_Label13")
 
 ###############################################
 # #一次SMOTE只SMOTE一個weaklabel
