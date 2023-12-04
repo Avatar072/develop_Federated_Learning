@@ -136,9 +136,11 @@ def DoALLWeakLabel(x_train,y_train, ChooseLabel, Choose_totaltrain):
     plt.show()    
 
     print('Original dataset shape %s' % Counter(y_train))
-    sampling_strategy_Label8 = {8: 40}
-    sampling_strategy_Label9 = {9: 40}
-    sampling_strategy_Label13 = {13: 40} 
+    # SMOTE到原本比數的兩倍
+    sampling_strategy_Label8 = {8: 12}
+    sampling_strategy_Label9 = {9: 36}
+    sampling_strategy_Label13 = {13: 20}
+    y_train = y_train.astype(int) 
      # Start Do SMOTE
     if(Choose_totaltrain != True):
         X_res, y_res = SMOTEParameterSet(sampling_strategy_Label8, 2, x_train, y_train, 8)
@@ -149,6 +151,7 @@ def DoALLWeakLabel(x_train,y_train, ChooseLabel, Choose_totaltrain):
         X_res, y_res = SMOTEParameterSet(sampling_strategy_Label8, 5, x_train, y_train, 8)
         X_res, y_res = SMOTEParameterSet(sampling_strategy_Label9, 5, X_res, y_res, 9)
         X_res, y_res = SMOTEParameterSet(sampling_strategy_Label13,5, X_res, y_res, 13)
+        y_res = y_res.astype(int) 
         spilttrainhalfAfterSMOTE(X_res,y_res)
 
     print('After SMOTE dataset shape %s' % Counter(y_res)) 
