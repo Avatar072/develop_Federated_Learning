@@ -1,6 +1,7 @@
 import torch
 import datetime
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.neighbors import NearestNeighbors
 import imblearn # Oversample with SMOTE and random undersample for imbalanced dataset
@@ -13,6 +14,7 @@ from sklearn.datasets import make_classification
 from matplotlib import pyplot
 from numpy import where
 from mytoolfunction import  ChooseLoadNpArray, ChooseTrainDatastes, ParseCommandLineArgs,generatefolder
+from mytoolfunction import splitdatasetbalancehalf,SaveDataToCsvfile,SaveDataframeTonpArray
 
 filepath = "D:\\Labtest20230911\\"
 desired_sample_count = 4000
@@ -52,6 +54,27 @@ cmap_original = plt.get_cmap('tab20', lut=len(np.unique(y_train)))
 
 # plt.legend()
 # plt.show()
+# total_train smote後切一半
+def spilttrainhalfAfterSMOTE(X_res,y_res):
+    # 使用 pd.DataFrame 將 X_res 和 y_res 水平合併
+    column_names = ["principal_Component" + str(i) for i in range(1, 64)] + ["Label"]
+    combined_df = pd.DataFrame(np.column_stack((X_res, y_res)), columns=column_names)
+    # 找到不包含NaN、Infinity和"inf"值的行
+    combined_df = combined_df[~combined_df.isin([np.nan, np.inf, -np.inf]).any(1)]
+    # combined_df.to_csv("./data/combined_df.csv", index=False)
+    # 顯示合併後的 DataFrame
+    print(combined_df)
+    # split train_dataframes各一半
+    train_half1,train_half2 = splitdatasetbalancehalf(combined_df)
+    # 找到train_df_half1和train_df_half2中重复的行
+    duplicates = train_half2[train_half2.duplicated(keep=False)]
+
+    # 删除train_df_half2中与train_df_half1重复的行
+    train_df_half2 = train_half2[~train_half2.duplicated(keep=False)]
+    SaveDataToCsvfile(train_half1, f"./ALL_Label/SMOTE/{today}/{client_str}/{file}_AfterSMOTEspilthalf", f"train_half1_AfterSMOTEspilt_{today}")
+    SaveDataToCsvfile(train_half2,  f"./ALL_Label/SMOTE/{today}/{client_str}/{file}_AfterSMOTEspilthalf", f"train_half2_AfterSMOTEspilt_{today}") 
+    SaveDataframeTonpArray(train_half1, f"./ALL_Label/SMOTE/{today}/{client_str}/{file}_AfterSMOTEspilthalf", "train_half1_AfterSMOTEspilt", today)
+    SaveDataframeTonpArray(train_half2, f"./ALL_Label/SMOTE/{today}/{client_str}/{file}_AfterSMOTEspilthalf", "train_half2_AfterSMOTEspilt", today)
 
 def SMOTEParameterSet(choose_strategy, choose_k_neighbors,x_train, y_train, Label_encode):
         
@@ -90,7 +113,7 @@ def SMOTEParameterSet(choose_strategy, choose_k_neighbors,x_train, y_train, Labe
         plt.show()
         return X_res, y_res
 
-def DoALLWeakLabel(x_train,y_train, ChooseLabel):
+def DoALLWeakLabel(x_train,y_train, ChooseLabel, Choose_totaltrain):
     
     generatefolder(f'{filepath}' + '\\ALL_Label\\SMOTE\\' + f'{today}\\', client_str)
     generatefolder(f'{filepath}\\ALL_Label\\SMOTE\\{today}\\{client_str}\\', f'{ChooseLabel}')
@@ -113,13 +136,20 @@ def DoALLWeakLabel(x_train,y_train, ChooseLabel):
     plt.show()    
 
     print('Original dataset shape %s' % Counter(y_train))
-    sampling_strategy_Label8 = {8: 2000}
-    sampling_strategy_Label9 = {9: 2000}
-    sampling_strategy_Label13 = {13: 2000} 
+    sampling_strategy_Label8 = {8: 40}
+    sampling_strategy_Label9 = {9: 40}
+    sampling_strategy_Label13 = {13: 40} 
      # Start Do SMOTE
-    X_res, y_res = SMOTEParameterSet(sampling_strategy_Label8, 2, x_train, y_train, 8)
-    X_res, y_res = SMOTEParameterSet(sampling_strategy_Label9, 5, X_res, y_res, 9)
-    X_res, y_res = SMOTEParameterSet(sampling_strategy_Label13,4, X_res, y_res, 13)
+    if(Choose_totaltrain != True):
+        X_res, y_res = SMOTEParameterSet(sampling_strategy_Label8, 2, x_train, y_train, 8)
+        X_res, y_res = SMOTEParameterSet(sampling_strategy_Label9, 5, X_res, y_res, 9)
+        X_res, y_res = SMOTEParameterSet(sampling_strategy_Label13,4, X_res, y_res, 13)
+    else: # k_neighbors  use default 5
+        print("use total train generate SMOTE data")
+        X_res, y_res = SMOTEParameterSet(sampling_strategy_Label8, 5, x_train, y_train, 8)
+        X_res, y_res = SMOTEParameterSet(sampling_strategy_Label9, 5, X_res, y_res, 9)
+        X_res, y_res = SMOTEParameterSet(sampling_strategy_Label13,5, X_res, y_res, 13)
+        spilttrainhalfAfterSMOTE(X_res,y_res)
 
     print('After SMOTE dataset shape %s' % Counter(y_res)) 
     np.save(f"{filepath}\\ALL_Label\\SMOTE\\{today}\\{client_str}\\{ChooseLabel}\\x_{file}_SMOTE_{ChooseLabel}_{today}.npy", X_res)
@@ -197,6 +227,8 @@ def DoBorederlineSMOTE(x_train, y_train,choosekind,ChooseLable):
     generatefolder(f'{filepath}' + '\\ALL_Label\\BorederlineSMOTE\\'+ f'{choosekind}\\' + f'{today}\\' + f'{client_str}\\', "Label13")
 
     x_train = x_train.real #去除复數 因為做完統計百分比PCA後會有
+    # 將標籤列轉換為整數型別
+    y_train = y_train.astype(int)
     # Assuming y_train contains the labels
     unique_labels = np.unique(y_train)
 
@@ -215,16 +247,18 @@ def DoBorederlineSMOTE(x_train, y_train,choosekind,ChooseLable):
     sampling_strategy_Label9 = {9: 2000}
     sampling_strategy_Label13 = {13: 2000} 
     # Start Do BorderlineSMOTE
-    X_res, y_res = BorderLineParameterSet(sampling_strategy_Label8, choosekind, 2, 10, x_train, y_train, 8)
+    # y_res = y_res.astype(int)
+    y_train = y_train.astype(int)
+    X_res, y_res = BorderLineParameterSet(sampling_strategy_Label8, choosekind, 5, 10, x_train, y_train, 8)
     X_res, y_res = BorderLineParameterSet(sampling_strategy_Label9, choosekind, 5, 10, X_res, y_res, 9)
-    X_res, y_res = BorderLineParameterSet(sampling_strategy_Label13, choosekind, 4, 10, X_res, y_res, 13)
+    X_res, y_res = BorderLineParameterSet(sampling_strategy_Label13, choosekind, 5, 10, X_res, y_res, 13)
 
     print('Afterr BorderLine SMOTE dataset shape %s' % Counter(y_res))
 
     np.save(f"{filepath}\\ALL_Label\\BorederlineSMOTE\\{choosekind}\\{today}\\{client_str}\\{ChooseLable}\\x_{file}_BorederlineSMOTE_{choosekind}_{ChooseLable}_{today}.npy", X_res)
     np.save(f"{filepath}\\ALL_Label\\BorederlineSMOTE\\{choosekind}\\{today}\\{client_str}\\{ChooseLable}\\y_{file}_BorederlineSMOTE_{choosekind}_{ChooseLable}_{today}.npy", y_res)
 
-# DoALLWeakLabel(x_train,y_train,"Label8_and_Label9_Label13")
+# DoALLWeakLabel(x_train,y_train,"Label8_and_Label9_Label13", True)
 # DoALL_Label(x_train,y_train)
 DoBorederlineSMOTE(x_train, y_train,"borderline-1","Label8_and_Label9_Label13")
 # DoBorederlineSMOTE(x_train, y_train,"borderline-2","Label8_and_Label9_Label13")
