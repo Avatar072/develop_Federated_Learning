@@ -12,7 +12,7 @@ from sklearn.model_selection import train_test_split
 column_names = ["principal_Component" + str(i) for i in range(1, 79)] + ["Label"]
 
 ### 獲取開始or結束時間
-def getStartorEndtime(Start_or_End):
+def getStartorEndtime(Start_or_End_Str,Start_or_End,fliepath):
     timestamp = time.time()# 用於獲取當前時間的時間戳，返回一個浮點數
 
     # 將時間戳轉換為日期時間物件
@@ -22,6 +22,10 @@ def getStartorEndtime(Start_or_End):
     formatted_time = dt_object.strftime("%Y-%m-%d %H:%M:%S")
 
     print(f"{Start_or_End}_time: {formatted_time}")
+    # 開啟檔案並寫入開始時間
+    with open(f"{fliepath}/StartTime_and_Endtime.csv", "a+") as file:
+        file.write(f"{Start_or_End_Str}:{str(formatted_time)}\n")
+
     return timestamp, formatted_time
 ### 計算花費時間
 def CalculateTime(end_IDS, start_IDS):
@@ -152,10 +156,64 @@ def ChooseLoadNpArray(filepath, file, Choose_method):
             # 20231113 only do labelencode and minmax
             # x_train = np.load(filepath + "x_train_20231113.npy", allow_pickle=True)
             # y_train = np.load(filepath + "y_train_20231113.npy", allow_pickle=True)
-
-            # 20231114 after 百分百PCAonly do labelencode and minmax
-            x_train = np.load(filepath + "x_train_20231114.npy", allow_pickle=True)
-            y_train = np.load(filepath + "y_train_20231114.npy", allow_pickle=True)
+            # # 20231114 after 百分百PCAonly do labelencode and minmax
+            # x_train = np.load(filepath + "x_train_20231114.npy", allow_pickle=True)
+            # y_train = np.load(filepath + "y_train_20231114.npy", allow_pickle=True)
+            
+            # 20240124 選所有特徵 only do labelencode and minmax
+            # x_train = np.load(filepath + "x_train_20240124.npy", allow_pickle=True)
+            # y_train = np.load(filepath + "y_train_20240124.npy", allow_pickle=True)
+			
+			#選80個特徵
+            # x_train = np.load(filepath + "x_train_cicids2017_AfterFeatureSelect80_20240124.npy", allow_pickle=True)
+            # y_train = np.load(filepath + "y_train_cicids2017_AfterFeatureSelect80_20240124.npy", allow_pickle=True)
+			
+			#選70個特徵
+            # x_train = np.load(filepath + "x_train_cicids2017_AfterFeatureSelect70_20240124.npy", allow_pickle=True)
+            # y_train = np.load(filepath + "y_train_cicids2017_AfterFeatureSelect70_20240124.npy", allow_pickle=True)
+			
+			#選60個特徵
+            x_train = np.load(filepath + "x_train_cicids2017_AfterFeatureSelect60_20240124.npy", allow_pickle=True)
+            y_train = np.load(filepath + "y_train_cicids2017_AfterFeatureSelect60_20240124.npy", allow_pickle=True)
+			
+			#選55個特徵
+            # x_train = np.load(filepath + "x_train_cicids2017_AfterFeatureSelect55_20240124.npy", allow_pickle=True)
+            # y_train = np.load(filepath + "y_train_cicids2017_AfterFeatureSelect55_20240124.npy", allow_pickle=True)
+			
+			#選50個特徵
+            # x_train = np.load(filepath + "x_train_cicids2017_AfterFeatureSelect50_20240124.npy", allow_pickle=True)
+            # y_train = np.load(filepath + "y_train_cicids2017_AfterFeatureSelect50_20240124.npy", allow_pickle=True)
+			
+			#選45個特徵
+            # x_train = np.load(filepath + "x_train_cicids2017_AfterFeatureSelect45_20240124.npy", allow_pickle=True)
+            # y_train = np.load(filepath + "y_train_cicids2017_AfterFeatureSelect45_20240124.npy", allow_pickle=True)
+			
+			#選40個特徵
+            # x_train = np.load(filepath + "x_train_cicids2017_AfterFeatureSelect40_20240124.npy", allow_pickle=True)
+            # y_train = np.load(filepath + "y_train_cicids2017_AfterFeatureSelect40_20240124.npy", allow_pickle=True)
+            
+            # 20240125 PCA only do labelencode and minmax
+            #PCA選77個特徵 84特徵=77+扣掉'SourceIP', 'SourcePort', 'DestinationIP', 'DestinationPort', 'Protocol', 'Timestamp' 'Label'
+            # x_train = np.load(filepath + "x_train_AfterPCA77_20240125.npy", allow_pickle=True)
+            # y_train = np.load(filepath + "y_train_AfterPCA77_20240125.npy", allow_pickle=True)
+            #PCA選73個特徵 80特徵=73+扣掉'SourceIP', 'SourcePort', 'DestinationIP', 'DestinationPort', 'Protocol', 'Timestamp' 'Label'
+            # x_train = np.load(filepath + "x_train_AfterPCA73_20240125.npy", allow_pickle=True)
+            # y_train = np.load(filepath + "y_train_AfterPCA73_20240125.npy", allow_pickle=True)
+            # #PCA選63個特徵 70特徵=63+扣掉'SourceIP', 'SourcePort', 'DestinationIP', 'DestinationPort', 'Protocol', 'Timestamp' 'Label'
+            # x_train = np.load(filepath + "x_train_AfterPCA63_20240125.npy", allow_pickle=True)
+            # y_train = np.load(filepath + "y_train_AfterPCA63_20240125.npy", allow_pickle=True)
+            # #PCA選53個特徵 60特徵=53+扣掉'SourceIP', 'SourcePort', 'DestinationIP', 'DestinationPort', 'Protocol', 'Timestamp' 'Label'
+            # x_train = np.load(filepath + "x_train_AfterPCA53_20240125.npy", allow_pickle=True)
+            # y_train = np.load(filepath + "y_train_AfterPCA53_20240125.npy", allow_pickle=True)
+            # #PCA選43個特徵 50特徵=43+扣掉'SourceIP', 'SourcePort', 'DestinationIP', 'DestinationPort', 'Protocol', 'Timestamp' 'Label'
+            # x_train = np.load(filepath + "x_train_AfterPCA43_20240125.npy", allow_pickle=True)
+            # y_train = np.load(filepath + "y_train_AfterPCA43_20240125.npy", allow_pickle=True)
+            # #PCA選38個特徵 45特徵=38+扣掉'SourceIP', 'SourcePort', 'DestinationIP', 'DestinationPort', 'Protocol', 'Timestamp' 'Label'
+            # x_train = np.load(filepath + "x_train_AfterPCA38_20240125.npy", allow_pickle=True)
+            # y_train = np.load(filepath + "y_train_AfterPCA38_20240125.npy", allow_pickle=True)
+            # #PCA選33個特徵 40特徵=33+扣掉'SourceIP', 'SourcePort', 'DestinationIP', 'DestinationPort', 'Protocol', 'Timestamp' 'Label'
+            # x_train = np.load(filepath + "x_train_AfterPCA33_20240125.npy", allow_pickle=True)
+            # y_train = np.load(filepath + "y_train_AfterPCA33_20240125.npy", allow_pickle=True)
         elif (Choose_method == 'SMOTE'):
             # x_train = np.load(filepath + "x_total_train_SMOTE_ALL_Label.npy", allow_pickle=True)
             # y_train = np.load(filepath + "y_total_train_SMOTE_ALL_Label.npy", allow_pickle=True)
@@ -182,12 +240,12 @@ def ChooseLoadNpArray(filepath, file, Choose_method):
             # y_train = np.load(filepath + "y_train_half1_20231113.npy", allow_pickle=True)
 
             # # 20231114 after 百分百PCAonly do labelencode and minmax
-            # x_train = np.load(filepath + "x_train_half1_20231114.npy", allow_pickle=True)
-            # y_train = np.load(filepath + "y_train_half1_20231114.npy", allow_pickle=True)
+            x_train = np.load(filepath + "x_train_half1_20231114.npy", allow_pickle=True)
+            y_train = np.load(filepath + "y_train_half1_20231114.npy", allow_pickle=True)
 
             # # 20231204 after SMOTE
-            x_train = np.load(filepath + "x_train_half1_AfterSMOTEspilt_20231204.npy", allow_pickle=True)
-            y_train = np.load(filepath + "y_train_half1_AfterSMOTEspilt_20231204.npy", allow_pickle=True)
+            # x_train = np.load(filepath + "x_train_half1_AfterSMOTEspilt_20231204.npy", allow_pickle=True)
+            # y_train = np.load(filepath + "y_train_half1_AfterSMOTEspilt_20231204.npy", allow_pickle=True)
         elif (Choose_method == 'SMOTE'):
             # #20231121 SMOTE Label 9 1000
             # x_train = np.load(filepath + "x_train_half1_SMOTE_Label_9.npy", allow_pickle=True)

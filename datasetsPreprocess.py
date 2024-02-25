@@ -9,7 +9,9 @@ from sklearn.model_selection import StratifiedShuffleSplit
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.preprocessing import OneHotEncoder
-from mytoolfunction import SaveDataToCsvfile,printFeatureCountAndLabelCountInfo
+from sklearn.feature_selection import SelectKBest, f_classif
+from sklearn.feature_selection import chi2
+from mytoolfunction import SaveDataToCsvfile,CheckFileExists,printFeatureCountAndLabelCountInfo
 from mytoolfunction import clearDirtyData,label_Encoding,splitdatasetbalancehalf,spiltweakLabelbalance,SaveDataframeTonpArray,generatefolder
 from mytoolfunction import spiltweakLabelbalance_afterOnehot
 
@@ -184,8 +186,13 @@ label_Encoding('DestinationPort')
 label_Encoding('Protocol')
 label_Encoding('Timestamp')
 label_Encoding('Label')
-mergecompelete_dataset.to_csv(filepath + "\\dataset_AfterProcessed\\total_encoded_updated_10000.csv", index=False)
-mergecompelete_dataset = pd.read_csv(filepath + "\\dataset_AfterProcessed\\total_encoded_updated_10000.csv")
+
+if(CheckFileExists(filepath + "\\dataset_AfterProcessed\\total_encoded_updated_10000.csv")!=True):
+    mergecompelete_dataset.to_csv(filepath + "\\dataset_AfterProcessed\\total_encoded_updated_10000.csv", index=False)
+    mergecompelete_dataset = pd.read_csv(filepath + "\\dataset_AfterProcessed\\total_encoded_updated_10000.csv")
+
+else:
+    mergecompelete_dataset = pd.read_csv(filepath + "\\dataset_AfterProcessed\\total_encoded_updated_10000.csv")
 
 
 ### extracting features
@@ -206,20 +213,300 @@ scaler = MinMaxScaler(feature_range=(0, 1)).fit(X)
 scaler.fit(X)
 X=scaler.transform(X)
 
+# 将缩放后的值更新到 doScalerdataset 中
+doScalerdataset.iloc[:, :] = X
 
-## 重新合並MinMax後的特徵
-number_of_components=77 # 原84個的特徵，扣掉'SourceIP', 'SourcePort', 'DestinationIP', 'DestinationPort', 'Protocol', 'Timestamp' 'Label' | 84-7 =77
-columns_array=[]
-for i in range (number_of_components):
-    columns_array.append("principal_Component"+str(i+1))
+# 将排除的列名和选中的特征和 Label 合并为新的 DataFrame
+afterminmax_dataset = pd.concat([undoScalerdataset,doScalerdataset,mergecompelete_dataset['Label']], axis = 1)
+# SaveDataToCsvfile(afterminmax_dataset, f"./data/dataset_AfterProcessed/{today}", f"cicids2017_AfterProcessed_minmax_{today}")
+###看檔案是否存在不存在存檔後讀檔
+if(CheckFileExists(filepath + "\\dataset_AfterProcessed\\cicids2017_AfterProcessed_minmax.csv")!=True):
+    SaveDataToCsvfile(afterminmax_dataset, f"./data/dataset_AfterProcessed", f"cicids2017_AfterProcessed_minmax")
+    afterminmax_dataset = pd.read_csv(filepath + "\\dataset_AfterProcessed\\cicids2017_AfterProcessed_minmax.csv")
+
+else:
+    afterminmax_dataset = pd.read_csv(filepath + "\\dataset_AfterProcessed\\cicids2017_AfterProcessed_minmax.csv")
+
+print("Original Column Names:")
+print(afterminmax_dataset.columns.value_counts)
+
+def dofeatureSelect(df, slecet_label_counts):
+    significance_level=0.05
+    if (slecet_label_counts == None):
+        slecet_label_counts ='all'
+
+    # 開始ch2特征选择，先分离特征和目标变量
+    y = df['Label']  # 目标变量
+    X = df.iloc[:, :-1]  # 特征
+
+    # 创建 SelectKBest 模型，选择 f_classif 统计测试方法
+    k_best = SelectKBest(score_func=chi2, k=slecet_label_counts)
+    X_new = k_best.fit_transform(X, y)
+
+    # 获取被选中的特征的索引
+    selected_feature_indices = k_best.get_support(indices=True)
+
+    # 打印被选中的特征的列名
+    selected_features = X.columns[selected_feature_indices]
+    print("Selected Features:")
+    print(selected_features)
+
+    # 印选择的特征的名称、索引和相应的 F 值、p 值
+    print("\nSelected Feature Statistics:")
+    selected_feature_stats = []
+    for idx, feature_idx in enumerate(selected_feature_indices):
+        feature_name = selected_features[idx]
+        f_value = k_best.scores_[feature_idx]
+        p_value = k_best.pvalues_[feature_idx]
+        print(f"Name = {feature_name}, F-value = {f_value}, p-value = {p_value}")
+        selected_feature_stats.append({
+            'Name': feature_name,
+            'F-value': f_value,
+            'p-value': p_value
+        })
+        # 判斷 p-值 是否小於显著性水準
+        if p_value <= significance_level:
+            print(f"Feature {feature_name} is statistically significant.")
+        else:
+            print(f"Feature {feature_name} is not statistically significant.")
+
+    print("selected特徵數", len(selected_feature_indices))
+
+    # 迴圈遍歷所有特徵，印出相應的統計信息
+    print("\nAll Features Statistics:")
+    all_feature_stats = []
+    for idx, feature_name in enumerate(X.columns):
+        f_value = k_best.scores_[idx]
+        p_value = k_best.pvalues_[idx]
+        print(f"Name = {feature_name}, F-value = {f_value}, p-value = {p_value}")
+        all_feature_stats.append({
+            'Name': feature_name,
+            'F-value': f_value,
+            'p-value': p_value
+        })
+    print("原特徵數", len(X.columns))
+
+    # 將選中特徵的統計信息存儲到 CSV 文件
+    selected_feature_stats_df = pd.DataFrame(selected_feature_stats)
+    all_feature_stats_df = pd.DataFrame(all_feature_stats)
+    SaveDataToCsvfile(selected_feature_stats_df, 
+                      f"./data/dataset_AfterProcessed/{today}/doFeatureSelect/{slecet_label_counts}", 
+                      f"selected_feature_stats_{today}")
+
+    SaveDataToCsvfile(all_feature_stats_df, 
+                      f"./data/dataset_AfterProcessed/{today}/doFeatureSelect/{slecet_label_counts}", 
+                      f"all_feature_stats_{today}")
+
+    # 将未被选中特徵的統計信息存儲到 CSV 文件
+    unselected_feature_indices = list(set(range(len(X.columns))) - set(selected_feature_indices))
+    unselected_features = X.columns[unselected_feature_indices]
+    unselected_feature_stats = []
+    for idx, feature_idx in enumerate(unselected_feature_indices):
+        feature_name = unselected_features[idx]
+        f_value = k_best.scores_[feature_idx]
+        p_value = k_best.pvalues_[feature_idx]
+        print(f"Unselected Feature - Name = {feature_name}, F-value = {f_value}, p-value = {p_value}")
+        unselected_feature_stats.append({
+            'Name': feature_name,
+            'F-value': f_value,
+            'p-value': p_value
+        })
     
-principalComponents = X
-principalDf = pd.DataFrame(data = principalComponents
-              , columns = columns_array)
+    # 將未被選中特徵的統計信息存儲到 CSV 文件
+    unselected_feature_stats_df = pd.DataFrame(unselected_feature_stats)
+    SaveDataToCsvfile(unselected_feature_stats_df, 
+                      f"./data/dataset_AfterProcessed/{today}/doFeatureSelect/{slecet_label_counts}", 
+                      f"unselected_feature_stats_{today}")
+    
+    
+    # # 找出未被選中的特徵
+    # unselected_features = set(X.columns) - set(selected_features)
+    # print("\nUnselected Features:")
+    # print(unselected_features)
 
-finalDf = pd.concat([undoScalerdataset,principalDf, mergecompelete_dataset[['Label']]], axis = 1)
-print(finalDf)
-mergecompelete_dataset=finalDf
+    # # 將未被選中特徵存儲到 CSV 文件
+    # unselected_features_df = pd.DataFrame(list(unselected_features), columns=['Unselected Features'])
+    # SaveDataToCsvfile(unselected_features_df, 
+    #                   f"./data/dataset_AfterProcessed/{today}/doFeatureSelect/{slecet_label_counts}", 
+    #                   f"unselected_features_{today}")
+
+    # 将 X_new 转换为 DataFrame
+    X_new_df = pd.DataFrame(X_new, columns=selected_features)
+
+    # 将选中的特征和 Label 合并为新的 DataFrame
+    selected_data = pd.concat([X_new_df, df['Label']], axis=1)
+    
+    SaveDataToCsvfile(selected_data, f"./data/dataset_AfterProcessed/{today}/doFeatureSelect/{slecet_label_counts}", 
+                      f"AfterSelected_{slecet_label_counts}_feature_data_{today}")
+    return selected_data
+
+# do chi-square and Labelencode and minmax 
+def DoSpiltAfterFeatureSelect(df,slecet_label_counts):
+    afterFeatureSelected_dataset= dofeatureSelect(df,slecet_label_counts)
+    train_dataframes, test_dataframes = train_test_split(afterFeatureSelected_dataset, test_size=0.2, random_state=42)#test_size=0.2表示将数据集分成测试集的比例为20%
+    
+    # Label encode mode  分別取出Label等於8、9、13、14的數據 對半分
+    train_label_8, test_label_8 = spiltweakLabelbalance(8,afterFeatureSelected_dataset,0.4)
+    train_label_9, test_label_9 = spiltweakLabelbalance(9,afterFeatureSelected_dataset,0.5)
+    train_label_13, test_label_13 = spiltweakLabelbalance(13,afterFeatureSelected_dataset,0.5)
+
+    # # 刪除Label相當於8、9、13的行
+    test_dataframes = test_dataframes[~test_dataframes['Label'].isin([8, 9,13])]
+    train_dataframes = train_dataframes[~train_dataframes['Label'].isin([8, 9,13])]
+    # 合併Label8、9、13回去
+    test_dataframes = pd.concat([test_dataframes, test_label_8, test_label_9, test_label_13])
+    train_dataframes = pd.concat([train_dataframes,train_label_8, train_label_9,train_label_13])
+    
+    label_counts = test_dataframes['Label'].value_counts()
+    print("test_dataframes\n", label_counts)
+    label_counts = train_dataframes['Label'].value_counts()
+    print("train_dataframes\n", label_counts)
+    SaveDataToCsvfile(train_dataframes, f"./data/dataset_AfterProcessed/{today}/doFeatureSelect/{slecet_label_counts}",  
+                      f"train_dataframes_AfterFeatureSelect_{slecet_label_counts}_{today}")
+    SaveDataToCsvfile(test_dataframes, f"./data/dataset_AfterProcessed/{today}/doFeatureSelect/{slecet_label_counts}", 
+                      f"test_dataframes_AfterFeatureSelect_{slecet_label_counts}_{today}")
+    SaveDataframeTonpArray(test_dataframes, f"./data/dataset_AfterProcessed/{today}/doFeatureSelect/{slecet_label_counts}", 
+                           f"test_cicids2017_AfterFeatureSelect{slecet_label_counts}",today)
+    SaveDataframeTonpArray(train_dataframes, f"./data/dataset_AfterProcessed/{today}/doFeatureSelect/{slecet_label_counts}", 
+                           f"train_cicids2017_AfterFeatureSelect{slecet_label_counts}",today)
+
+# do Labelencode and minmax 
+def DoSpiltAllfeatureAfterMinMax(df):  
+    train_dataframes, test_dataframes = train_test_split(df, test_size=0.2, random_state=42)#test_size=0.2表示将数据集分成测试集的比例为20%
+    printFeatureCountAndLabelCountInfo(train_dataframes, test_dataframes)
+    # Label encode mode  分別取出Label等於8、9、13、14的數據 對半分
+    train_label_8, test_label_8 = spiltweakLabelbalance(8,df,0.4)
+    train_label_9, test_label_9 = spiltweakLabelbalance(9,df,0.5)
+    train_label_13, test_label_13 = spiltweakLabelbalance(13,df,0.5)
+
+    # # 刪除Label相當於8、9、13的行
+    test_dataframes = test_dataframes[~test_dataframes['Label'].isin([8, 9,13])]
+    train_dataframes = train_dataframes[~train_dataframes['Label'].isin([8, 9,13])]
+    # 合併Label8、9、13回去
+    test_dataframes = pd.concat([test_dataframes, test_label_8, test_label_9, test_label_13])
+    train_dataframes = pd.concat([train_dataframes,train_label_8, train_label_9,train_label_13])
+    
+    label_counts = test_dataframes['Label'].value_counts()
+    print("test_dataframes\n", label_counts)
+    label_counts = train_dataframes['Label'].value_counts()
+    print("train_dataframes\n", label_counts)
+
+    SaveDataToCsvfile(train_dataframes, f"./data/dataset_AfterProcessed/{today}", f"train_dataframes_{today}")
+    SaveDataToCsvfile(test_dataframes,  f"./data/dataset_AfterProcessed/{today}", f"test_dataframes_{today}")
+    SaveDataframeTonpArray(test_dataframes, f"./data/dataset_AfterProcessed/{today}", "test",today)
+    SaveDataframeTonpArray(train_dataframes, f"./data/dataset_AfterProcessed/{today}", "train",today)
+
+# do PCA and Labelencode and minmax 
+def DoSpiltAfterDoPCA(df,number_of_components):
+    # number_of_components=20
+    
+    crop_dataset=df.iloc[:,:-1]
+    # 列出要排除的列名
+    columns_to_exclude = ['SourceIP', 'SourcePort', 'DestinationIP', 'DestinationPort', 'Protocol', 'Timestamp']
+    # 使用条件选择不等于这些列名的列
+    # number_of_components=77 # 原84個的特徵，扣掉'SourceIP', 'SourcePort', 'DestinationIP', 'DestinationPort', 'Protocol', 'Timestamp' 'Label' | 84-7 =77
+    doScalerdataset = crop_dataset[[col for col in crop_dataset.columns if col not in columns_to_exclude]]
+    undoScalerdataset = crop_dataset[[col for col in crop_dataset.columns if col  in columns_to_exclude]]
+    # afterminmax_dataset = pd.concat([undoScalerdataset,doScalerdataset,mergecompelete_dataset['Label']], axis = 1)
+
+    print("Original number of features:", len(df.columns) - 1)  # 减去 'Label' 列
+    # X = df.drop(columns=['Label'])  # 提取特征，去除 'Label' 列
+    X = doScalerdataset
+    pca = PCA(n_components=number_of_components)
+    columns_array=[]
+    for i in range (number_of_components):
+        columns_array.append("principal_Component"+str(i+1))
+        
+    principalComponents = pca.fit_transform(X)
+    principalDf = pd.DataFrame(data = principalComponents
+                , columns = columns_array)
+
+    finalDf = pd.concat([undoScalerdataset,principalDf, df[['Label']]], axis = 1)
+    df=finalDf
+
+    SaveDataToCsvfile(df, f"./data/dataset_AfterProcessed/{today}/doPCA/{number_of_components}", f"cicids2017_AfterProcessed_minmax_PCA")
+
+    train_dataframes, test_dataframes = train_test_split(df, test_size=0.2, random_state=42)#test_size=0.2表示将数据集分成测试集的比例为20%
+    printFeatureCountAndLabelCountInfo(train_dataframes, test_dataframes)
+    # Label encode mode  分別取出Label等於8、9、13、14的數據 對半分
+    train_label_8, test_label_8 = spiltweakLabelbalance(8,df,0.4)
+    train_label_9, test_label_9 = spiltweakLabelbalance(9,df,0.5)
+    train_label_13, test_label_13 = spiltweakLabelbalance(13,df,0.5)
+
+    # # 刪除Label相當於8、9、13的行
+    test_dataframes = test_dataframes[~test_dataframes['Label'].isin([8, 9,13])]
+    train_dataframes = train_dataframes[~train_dataframes['Label'].isin([8, 9,13])]
+    # 合併Label8、9、13回去
+    test_dataframes = pd.concat([test_dataframes, test_label_8, test_label_9, test_label_13])
+    train_dataframes = pd.concat([train_dataframes,train_label_8, train_label_9,train_label_13])
+    
+    label_counts = test_dataframes['Label'].value_counts()
+    print("test_dataframes\n", label_counts)
+    label_counts = train_dataframes['Label'].value_counts()
+    print("train_dataframes\n", label_counts)
+
+    SaveDataToCsvfile(train_dataframes, f"./data/dataset_AfterProcessed/{today}/doPCA/{number_of_components}", f"train_dataframes_AfterPCA{number_of_components}_{today}")
+    SaveDataToCsvfile(test_dataframes,  f"./data/dataset_AfterProcessed/{today}/doPCA/{number_of_components}", f"test_dataframes_AfterPCA{number_of_components}_{today}")
+    SaveDataframeTonpArray(test_dataframes, f"./data/dataset_AfterProcessed/{today}/doPCA/{number_of_components}", f"test_AfterPCA{number_of_components}",today)
+    SaveDataframeTonpArray(train_dataframes, f"./data/dataset_AfterProcessed/{today}/doPCA/{number_of_components}", f"train_AfterPCA{number_of_components}",today)
+
+# 開始進行資料劃分主要function
+def DoAllfeatureOrSelectfeature(df,bool_doAllFeature):
+    if bool_doAllFeature!=True:
+        
+        # 選ALL特徵
+        # DoSpiltAfterFeatureSelect(df,None)
+        #選80個特徵
+        DoSpiltAfterFeatureSelect(df,80)
+        #選70個特徵
+        DoSpiltAfterFeatureSelect(df,70)
+        #選65個特徵
+        DoSpiltAfterFeatureSelect(df,60)
+        #選60個特徵
+        DoSpiltAfterFeatureSelect(df,60)
+        #選55個特徵
+        DoSpiltAfterFeatureSelect(df,55)
+        #選50個特徵
+        DoSpiltAfterFeatureSelect(df,50)
+        #選45個特徵
+        DoSpiltAfterFeatureSelect(df,45)
+        #選40個特徵
+        DoSpiltAfterFeatureSelect(df,40)
+    else:
+        DoSpiltAllfeatureAfterMinMax(df)
+# DoAllfeatureOrSelectfeature(afterminmax_dataset,False)
+# DoAllfeatureOrSelectfeature(afterminmax_dataset,True)
+        
+#PCA選77個特徵 總84特徵=77+扣掉'SourceIP', 'SourcePort', 'DestinationIP', 'DestinationPort', 'Protocol', 'Timestamp' 'Label'
+# DoSpiltAfterDoPCA(afterminmax_dataset,77)
+#PCA選73個特徵 總80特徵=73+扣掉'SourceIP', 'SourcePort', 'DestinationIP', 'DestinationPort', 'Protocol', 'Timestamp' 'Label'
+# DoSpiltAfterDoPCA(afterminmax_dataset,73)
+#PCA選63個特徵 總70特徵=73+扣掉'SourceIP', 'SourcePort', 'DestinationIP', 'DestinationPort', 'Protocol', 'Timestamp' 'Label'
+DoSpiltAfterDoPCA(afterminmax_dataset,63)
+#PCA選53個特徵 總60特徵=53+扣掉'SourceIP', 'SourcePort', 'DestinationIP', 'DestinationPort', 'Protocol', 'Timestamp' 'Label'
+DoSpiltAfterDoPCA(afterminmax_dataset,53)
+#PCA選43個特徵 總50特徵=43+扣掉'SourceIP', 'SourcePort', 'DestinationIP', 'DestinationPort', 'Protocol', 'Timestamp' 'Label'
+DoSpiltAfterDoPCA(afterminmax_dataset,43)
+#PCA選38個特徵 總45特徵=38+扣掉'SourceIP', 'SourcePort', 'DestinationIP', 'DestinationPort', 'Protocol', 'Timestamp' 'Label'
+DoSpiltAfterDoPCA(afterminmax_dataset,38)
+#PCA選33個特徵 總40特徵=33+扣掉'SourceIP', 'SourcePort', 'DestinationIP', 'DestinationPort', 'Protocol', 'Timestamp' 'Label'
+DoSpiltAfterDoPCA(afterminmax_dataset,33)
+
+    
+# ## 重新合並MinMax後的特徵
+# number_of_components=77 # 原84個的特徵，扣掉'SourceIP', 'SourcePort', 'DestinationIP', 'DestinationPort', 'Protocol', 'Timestamp' 'Label' | 84-7 =77
+# columns_array=[]
+# for i in range (number_of_components):
+#     columns_array.append("principal_Component"+str(i+1))
+    
+# principalComponents = X
+# principalDf = pd.DataFrame(data = principalComponents
+#               , columns = columns_array)
+
+# finalDf = pd.concat([undoScalerdataset,principalDf, mergecompelete_dataset[['Label']]], axis = 1)
+# print(finalDf)
+# mergecompelete_dataset=finalDf
+
 # 保留MinMaxScaler後的結果
 # SaveDataToCsvfile(mergecompelete_dataset, "./data/dataset_AfterProcessed","total_encoded_updated_10000_After_minmax")
 
@@ -229,57 +516,59 @@ mergecompelete_dataset=finalDf
 # SaveDataToCsvfile(mergecompelete_dataset, "./data/dataset_AfterProcessed","total_encoded_updated_10000_After_minmax_onehot")
 
 # split mergecompelete_dataset
-train_dataframes, test_dataframes = train_test_split(mergecompelete_dataset, test_size=0.2, random_state=42)#test_size=0.4表示将数据集分成测试集的比例为40%
+# train_dataframes, test_dataframes = train_test_split(mergecompelete_dataset, test_size=0.2, random_state=42)#test_size=0.4表示将数据集分成测试集的比例为40%
+# train_dataframes, test_dataframes = train_test_split(afterminmax_dataset, test_size=0.2, random_state=42)#test_size=0.4表示将数据集分成测试集的比例为40%
+
 # printFeatureCountAndLabelCountInfo(train_dataframes, test_dataframes)
 
 ###########################################################Don't do one hot mode################################################################################################
 # 要做這邊的話上面OneHot_Encoding Protocol和Label要註解掉
 # Label encode mode  分別取出Label等於8、9、13、14的數據 對半分
-train_label_8, test_label_8 = spiltweakLabelbalance(8,mergecompelete_dataset,0.4)
-train_label_9, test_label_9 = spiltweakLabelbalance(9,mergecompelete_dataset,0.5)
-train_label_13, test_label_13 = spiltweakLabelbalance(13,mergecompelete_dataset,0.5)
-# train_label_14, test_label_14 = spiltweakLabelbalance(14,mergecompelete_dataset,0.5)
+# train_label_8, test_label_8 = spiltweakLabelbalance(8,mergecompelete_dataset,0.4)
+# train_label_9, test_label_9 = spiltweakLabelbalance(9,mergecompelete_dataset,0.5)
+# train_label_13, test_label_13 = spiltweakLabelbalance(13,mergecompelete_dataset,0.5)
+# # train_label_14, test_label_14 = spiltweakLabelbalance(14,mergecompelete_dataset,0.5)
 
-# # 刪除Label相當於8、9、13、14的行
-# test_dataframes = test_dataframes[~test_dataframes['Label'].isin([8, 9,13, 14])]
-# train_dataframes = train_dataframes[~train_dataframes['Label'].isin([8, 9,13,14])]
-# # 合併Label8、9、13、14回去
-# test_dataframes = pd.concat([test_dataframes, test_label_8, test_label_9, test_label_13, test_label_14])
-# train_dataframes = pd.concat([train_dataframes,train_label_8, train_label_9,train_label_13,train_label_14])
+# # # 刪除Label相當於8、9、13、14的行
+# # test_dataframes = test_dataframes[~test_dataframes['Label'].isin([8, 9,13, 14])]
+# # train_dataframes = train_dataframes[~train_dataframes['Label'].isin([8, 9,13,14])]
+# # # 合併Label8、9、13、14回去
+# # test_dataframes = pd.concat([test_dataframes, test_label_8, test_label_9, test_label_13, test_label_14])
+# # train_dataframes = pd.concat([train_dataframes,train_label_8, train_label_9,train_label_13,train_label_14])
 
-# # 刪除Label相當於8、9、13的行
-test_dataframes = test_dataframes[~test_dataframes['Label'].isin([8, 9,13])]
-train_dataframes = train_dataframes[~train_dataframes['Label'].isin([8, 9,13])]
-# 合併Label8、9、13回去
-test_dataframes = pd.concat([test_dataframes, test_label_8, test_label_9, test_label_13])
-train_dataframes = pd.concat([train_dataframes,train_label_8, train_label_9,train_label_13])
+# # # 刪除Label相當於8、9、13的行
+# test_dataframes = test_dataframes[~test_dataframes['Label'].isin([8, 9,13])]
+# train_dataframes = train_dataframes[~train_dataframes['Label'].isin([8, 9,13])]
+# # 合併Label8、9、13回去
+# test_dataframes = pd.concat([test_dataframes, test_label_8, test_label_9, test_label_13])
+# train_dataframes = pd.concat([train_dataframes,train_label_8, train_label_9,train_label_13])
 
-label_counts = test_dataframes['Label'].value_counts()
-print("test_dataframes\n", label_counts)
-label_counts = train_dataframes['Label'].value_counts()
-print("train_dataframes\n", label_counts)
+# label_counts = test_dataframes['Label'].value_counts()
+# print("test_dataframes\n", label_counts)
+# label_counts = train_dataframes['Label'].value_counts()
+# print("train_dataframes\n", label_counts)
 
-# split train_dataframes各一半
-train_half1,train_half2 = splitdatasetbalancehalf(train_dataframes)
+# # split train_dataframes各一半
+# train_half1,train_half2 = splitdatasetbalancehalf(train_dataframes)
 
-# 找到train_df_half1和train_df_half2中重复的行
-duplicates = train_half2[train_half2.duplicated(keep=False)]
+# # 找到train_df_half1和train_df_half2中重复的行
+# duplicates = train_half2[train_half2.duplicated(keep=False)]
 
-# 删除train_df_half2中与train_df_half1重复的行
-train_df_half2 = train_half2[~train_half2.duplicated(keep=False)]
+# # 删除train_df_half2中与train_df_half1重复的行
+# train_df_half2 = train_half2[~train_half2.duplicated(keep=False)]
 
-# train_df_half1和train_df_half2 detail information
-printFeatureCountAndLabelCountInfo(train_half1, train_df_half2)
+# # train_df_half1和train_df_half2 detail information
+# printFeatureCountAndLabelCountInfo(train_half1, train_df_half2)
 
-SaveDataToCsvfile(train_dataframes, f"./data/dataset_AfterProcessed/{today}", f"train_dataframes_{today}")
-SaveDataToCsvfile(test_dataframes,  f"./data/dataset_AfterProcessed/{today}", f"test_dataframes_{today}")
-SaveDataToCsvfile(train_half1, f"./data/dataset_AfterProcessed/{today}", f"train_half1_{today}")
-SaveDataToCsvfile(train_half2,  f"./data/dataset_AfterProcessed/{today}", f"train_half2_{today}") 
+# SaveDataToCsvfile(train_dataframes, f"./data/dataset_AfterProcessed/{today}", f"train_dataframes_{today}")
+# SaveDataToCsvfile(test_dataframes,  f"./data/dataset_AfterProcessed/{today}", f"test_dataframes_{today}")
+# SaveDataToCsvfile(train_half1, f"./data/dataset_AfterProcessed/{today}", f"train_half1_{today}")
+# SaveDataToCsvfile(train_half2,  f"./data/dataset_AfterProcessed/{today}", f"train_half2_{today}") 
 
-SaveDataframeTonpArray(test_dataframes, f"./data/dataset_AfterProcessed/{today}", "test",today)
-SaveDataframeTonpArray(train_dataframes, f"./data/dataset_AfterProcessed/{today}", "train",today)
-SaveDataframeTonpArray(train_half1, f"./data/dataset_AfterProcessed/{today}", "train_half1", today)
-SaveDataframeTonpArray(train_half2, f"./data/dataset_AfterProcessed/{today}", "train_half2", today)
+# SaveDataframeTonpArray(test_dataframes, f"./data/dataset_AfterProcessed/{today}", "test",today)
+# SaveDataframeTonpArray(train_dataframes, f"./data/dataset_AfterProcessed/{today}", "train",today)
+# SaveDataframeTonpArray(train_half1, f"./data/dataset_AfterProcessed/{today}", "train_half1", today)
+# SaveDataframeTonpArray(train_half2, f"./data/dataset_AfterProcessed/{today}", "train_half2", today)
 
 ###########################################################one hot mode################################################################################################
 # # one hot mode 分別取出Label等於8、9、13的數據 對半分

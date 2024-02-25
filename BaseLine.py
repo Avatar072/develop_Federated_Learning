@@ -15,7 +15,7 @@ warnings.filterwarnings("ignore")#https://blog.csdn.net/qq_43391414/article/deta
 from torch.utils.data import DataLoader, TensorDataset
 from tqdm import tqdm
 from sklearn.metrics import confusion_matrix
-from mytoolfunction import generatefolder, ChooseLoadNpArray,ChooseTrainDatastes, ParseCommandLineArgs,ChooseTestDataSet
+from mytoolfunction import generatefolder, ChooseLoadNpArray,getStartorEndtime, ParseCommandLineArgs,ChooseTestDataSet
 from collections import Counter
 ####################################################################################################
 
@@ -48,15 +48,71 @@ generatefolder(f"./single_AnalyseReportFolder/", today)
 generatefolder(f"./single_AnalyseReportFolder/{today}/", client_str)
 generatefolder(f"./single_AnalyseReportFolder/{today}/{client_str}/", Choose_method)
 
+getStartorEndtime("starttime",start_IDS,f"./single_AnalyseReportFolder/{today}/{client_str}/{Choose_method}")
 
 # # 20231113 only do labelencode and minmax
 # x_test = np.load(filepath + "x_test_20231113.npy", allow_pickle=True)
 # y_test = np.load(filepath + "y_test_20231113.npy", allow_pickle=True)
 
 # 20231114 after 百分百PCAonly do labelencode and minmax
-x_test = np.load(filepath + "x_test_20231114.npy", allow_pickle=True)
-y_test = np.load(filepath + "y_test_20231114.npy", allow_pickle=True)
+# x_test = np.load(filepath + "x_test_20231114.npy", allow_pickle=True)
+# y_test = np.load(filepath + "y_test_20231114.npy", allow_pickle=True)
 # x_test, y_test = ChooseTestDataSet(filepath)
+#####
+# 20240124 選所有特徵 only do labelencode and minmax
+# x_test = np.load(filepath + "x_test_20240124.npy", allow_pickle=True)
+# y_test = np.load(filepath + "y_test_20240124.npy", allow_pickle=True)
+#選80個特徵
+# x_test = np.load(filepath + "x_test_cicids2017_AfterFeatureSelect80_20240124.npy", allow_pickle=True)
+# y_test = np.load(filepath + "y_test_cicids2017_AfterFeatureSelect80_20240124.npy", allow_pickle=True)
+
+#選70個特徵
+# x_test = np.load(filepath + "x_test_cicids2017_AfterFeatureSelect70_20240124.npy", allow_pickle=True)
+# y_test = np.load(filepath + "y_test_cicids2017_AfterFeatureSelect70_20240124.npy", allow_pickle=True)
+
+# #選60個特徵
+x_test = np.load(filepath + "x_test_cicids2017_AfterFeatureSelect60_20240124.npy", allow_pickle=True)
+y_test = np.load(filepath + "y_test_cicids2017_AfterFeatureSelect60_20240124.npy", allow_pickle=True)
+
+#選55個特徵
+# x_test = np.load(filepath + "x_test_cicids2017_AfterFeatureSelect55_20240124.npy", allow_pickle=True)
+# y_test = np.load(filepath + "y_test_cicids2017_AfterFeatureSelect55_20240124.npy", allow_pickle=True)
+
+#選50個特徵
+# x_test = np.load(filepath + "x_test_cicids2017_AfterFeatureSelect50_20240124.npy", allow_pickle=True)
+# y_test = np.load(filepath + "y_test_cicids2017_AfterFeatureSelect50_20240124.npy", allow_pickle=True)
+
+#選45個特徵
+# x_test = np.load(filepath + "x_test_cicids2017_AfterFeatureSelect45_20240124.npy", allow_pickle=True)
+# y_test = np.load(filepath + "y_test_cicids2017_AfterFeatureSelect45_20240124.npy", allow_pickle=True)
+
+#選40個特徵
+# x_test = np.load(filepath + "x_test_cicids2017_AfterFeatureSelect40_20240124.npy", allow_pickle=True)
+# y_test = np.load(filepath + "y_test_cicids2017_AfterFeatureSelect40_20240124.npy", allow_pickle=True)
+
+# 20240125 PCA only do labelencode and minmax
+#PCA選77個特徵 84特徵=77+扣掉'SourceIP', 'SourcePort', 'DestinationIP', 'DestinationPort', 'Protocol', 'Timestamp' 'Label'
+# x_test = np.load(filepath + "x_test_AfterPCA77_20240125.npy", allow_pickle=True)
+# y_test = np.load(filepath + "y_test_AfterPCA77_20240125.npy", allow_pickle=True)
+#PCA選73個特徵 80特徵=73+扣掉'SourceIP', 'SourcePort', 'DestinationIP', 'DestinationPort', 'Protocol', 'Timestamp' 'Label'
+# x_test = np.load(filepath + "x_test_AfterPCA73_20240125.npy", allow_pickle=True)
+# y_test = np.load(filepath + "y_test_AfterPCA73_20240125.npy", allow_pickle=True)
+# #PCA選63個特徵 70特徵=73+扣掉'SourceIP', 'SourcePort', 'DestinationIP', 'DestinationPort', 'Protocol', 'Timestamp' 'Label'
+# x_test = np.load(filepath + "x_test_AfterPCA63_20240125.npy", allow_pickle=True)
+# y_test = np.load(filepath + "y_test_AfterPCA63_20240125.npy", allow_pickle=True)
+# #PCA選53個特徵 60特徵=53+扣掉'SourceIP', 'SourcePort', 'DestinationIP', 'DestinationPort', 'Protocol', 'Timestamp' 'Label'
+# x_test = np.load(filepath + "x_test_AfterPCA53_20240125.npy", allow_pickle=True)
+# y_test = np.load(filepath + "y_test_AfterPCA53_20240125.npy", allow_pickle=True)
+# #PCA選43個特徵 50特徵=43+扣掉'SourceIP', 'SourcePort', 'DestinationIP', 'DestinationPort', 'Protocol', 'Timestamp' 'Label'
+# x_test = np.load(filepath + "x_test_AfterPCA43_20240125.npy", allow_pickle=True)
+# y_test = np.load(filepath + "y_test_AfterPCA43_20240125.npy", allow_pickle=True)
+# #PCA選38個特徵 45特徵=38+扣掉'SourceIP', 'SourcePort', 'DestinationIP', 'DestinationPort', 'Protocol', 'Timestamp' 'Label'
+# x_test = np.load(filepath + "x_test_AfterPCA38_20240125.npy", allow_pickle=True)
+# y_test = np.load(filepath + "y_test_AfterPCA38_20240125.npy", allow_pickle=True)
+# #PCA選33個特徵 40特徵=33+扣掉'SourceIP', 'SourcePort', 'DestinationIP', 'DestinationPort', 'Protocol', 'Timestamp' 'Label'
+# x_test = np.load(filepath + "x_test_AfterPCA33_20240125.npy", allow_pickle=True)
+# y_test = np.load(filepath + "y_test_AfterPCA33_20240125.npy", allow_pickle=True)
+
 counter = Counter(y_test)
 print("test筆數",counter)
 
@@ -264,6 +320,9 @@ net = MLP().to(DEVICE)
 
 # 訓練模型
 train(net, trainloader, epochs=num_epochs)
+#紀錄結束時間
+end_IDS = time.time()
+getStartorEndtime("endtime",end_IDS,f"./single_AnalyseReportFolder/{today}/{client_str}/{Choose_method}")
 
 # 評估模型
 test_accuracy = test(net, testloader, start_IDS, client_str,True)
